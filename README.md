@@ -61,6 +61,18 @@ npm i -g pnpm
 
 # prepare for pnpm
 pnpm i
+
+# run the full build
+pnpm run ci
+
+# run the tests in watch mode
+pnpm test:watch
+
+# or just run the tests
+pnpm test
+
+# fix linting issues
+pnpm lint:fix
 ```
 
 ## Contributing
@@ -68,3 +80,12 @@ pnpm i
 This project is still incubating. Please feel free to raise issues, but we're not taking PRs at this time.
 
 
+## TODO
+
+- dropWhile
+- iterate
+- sorted
+- min/max
+- more reducers
+- collectors
+- gather
