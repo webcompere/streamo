@@ -82,6 +82,5 @@ This project is still incubating. Please feel free to raise issues, but we're no
 
 ## TODO
 
-- more reducers
 - collectors
 - gather

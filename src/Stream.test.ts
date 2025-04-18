@@ -327,6 +327,52 @@ describe('streaming', () => {
           .get()
       ).toBe(3);
     });
+
+    it('can reduce no items to the initial value', () => {
+      expect(
+        Stream.empty<string>().reduceFrom(
+          'foo',
+          (a, b) => `${a}${b}`,
+          identity()
+        )
+      ).toBe('foo');
+    });
+
+    it('can reduce multiple items by combining', () => {
+      expect(
+        Stream.of('bar').reduceFrom('foo', (a, b) => `${a} ${b}`, identity())
+      ).toBe('foo bar');
+    });
+
+    it('can reduce multiple items with type conversion', () => {
+      expect(
+        Stream.of('foo', 'fo', 'f').reduceFrom(
+          '',
+          (a, b) => `${a} ${b}`,
+          (st: string) => `${st.length}`
+        )
+      ).toBe(' 3 2 1');
+    });
+
+    it('can join nothing together', () => {
+      expect(Stream.empty().join(',')).toBe('');
+    });
+
+    it('can join one thing together', () => {
+      expect(Stream.of('a').join(',')).toBe('a');
+    });
+
+    it('can join things together', () => {
+      expect(Stream.of('a', 'b', 'c', 'd').join(',')).toBe('a,b,c,d');
+    });
+
+    it('can join things together with no delimiter', () => {
+      expect(Stream.of('a', 'b', 'c', 'd').join()).toBe('abcd');
+    });
+
+    it('can join things together when first is blank', () => {
+      expect(Stream.of('', 'b', 'c', 'd').join(',')).toBe(',b,c,d');
+    });
   });
 
   describe('Numeric', () => {
@@ -445,6 +491,8 @@ describe('streaming', () => {
       (stream: Stream<number>) => stream.anyMatch((x) => x === 2),
       (stream: Stream<number>) => stream.findFirst(),
       (stream: Stream<number>) => stream.reduce((a, b) => a + b),
+      (stream: Stream<number>) =>
+        stream.reduceFrom(1, (a, b) => a + b, identity()),
     ])(
       'cannot use a terminal operation more than once',
       (operation: Consumer<Stream<number>>) => {

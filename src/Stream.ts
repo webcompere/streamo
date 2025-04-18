@@ -451,6 +451,40 @@ export default class Stream<T> {
       return resultSoFar;
     });
   }
+
+  /**
+   * Reduce the stream to a single value of possibly a different type to the stream (terminal operation)
+   * @param initialValue the initial value to reduce from
+   * @param accumulator the operator for combining the amassed result
+   * @param converter an optional converter, when we're not using the type from this stream to convert from element type
+   * to the reduction type
+   * @returns the first element if there's one, the accumulated result if more, or empty
+   */
+  public reduceFrom<U>(
+    initialValue: U,
+    accumulator: BinaryOperator<U>,
+    converter: Mapper<T, U>
+  ): U {
+    return this.terminal(() => {
+      let resultSoFar = initialValue;
+      while (this.iterable.hasNext()) {
+        const next = this.iterable.getNext();
+        resultSoFar = accumulator(resultSoFar, converter(next));
+      }
+      return resultSoFar;
+    });
+  }
+
+  /**
+   * Join the elements of the stream together into a string
+   * @param delimiter the delimiter to join with, defaults to empty string
+   * @returns a joined version of the stream
+   */
+  public join(delimiter = ''): string {
+    return this.map((element) => `${element}`)
+      .reduce((a, b) => `${a}${delimiter}${b}`)
+      .orElse('');
+  }
 }
 
 /**
