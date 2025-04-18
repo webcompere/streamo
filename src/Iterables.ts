@@ -60,6 +60,37 @@ export class FilteringIterable<T> implements Iterable<T> {
 }
 
 /**
+ * Iterates over another iterable only returning while the predicate is matched
+ */
+export class TakeWhileIterable<T> implements Iterable<T> {
+  private first = true;
+  private next: Optional<T> = Optional.empty();
+  private readonly source: Iterable<T>;
+  private readonly predicate: Predicate<T>;
+
+  constructor(source: Iterable<T>, predicate: Predicate<T>) {
+    this.source = source;
+    this.predicate = predicate;
+  }
+
+  hasNext(): boolean {
+    if (this.first) {
+      if (this.source.hasNext()) {
+        this.next = Optional.of(this.source.getNext()).filter(this.predicate);
+      }
+      this.first = false;
+    } else if (this.next.isPresent() && this.source.hasNext()) {
+      this.next = Optional.of(this.source.getNext()).filter(this.predicate);
+    }
+
+    return this.next.isPresent();
+  }
+  getNext(): T {
+    return this.next.orElseThrow(() => new Error('No elements remaining'));
+  }
+}
+
+/**
  * Iterates over an iterator, but with a limit
  */
 export class LimitingIterable<T> implements Iterable<T> {
@@ -160,19 +191,19 @@ export class FlatteningIterable<T> implements Iterable<T> {
  * Iterates over a number
  */
 export class RangeIterable implements Iterable<number> {
-    private current;
-    private readonly maxExclusive: number;
+  private current;
+  private readonly maxExclusive: number;
 
-    constructor(min: number, maxExclusive: number) {
-        this.current = min;
-        this.maxExclusive = maxExclusive;
-    }
+  constructor(min: number, maxExclusive: number) {
+    this.current = min;
+    this.maxExclusive = maxExclusive;
+  }
 
-    hasNext(): boolean {
-        return this.current < this.maxExclusive;
-    }
-    
-    getNext(): number {
-        return this.current++;
-    }
+  hasNext(): boolean {
+    return this.current < this.maxExclusive;
+  }
+
+  getNext(): number {
+    return this.current++;
+  }
 }

@@ -15,6 +15,7 @@ import {
   LimitingIterable,
   FlatteningIterable,
   RangeIterable,
+  TakeWhileIterable,
 } from './Iterables';
 import Optional from './Optional';
 
@@ -131,6 +132,16 @@ export default class Stream<T> {
    */
   public filter(predicate: Predicate<T>): Stream<T> {
     return new Stream<T>(new FilteringIterable(this.iterable, predicate));
+  }
+
+  /**
+   * Similar to filtering, this requires a filter to pass to return items, but
+   * it stops the stream the moment the filter fails
+   * @param predicate the condition to pass
+   * @returns a stream which only takes while the filter is matched
+   */
+  public takeWhile(predicate: Predicate<T>): Stream<T> {
+    return new Stream<T>(new TakeWhileIterable(this.iterable, predicate));
   }
 
   /**

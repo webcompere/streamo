@@ -238,4 +238,38 @@ describe('streaming', () => {
       expect(Stream.ofRangeClosed(0, 4).sum()).toBe(10);
     });
   });
+
+  describe('take while', () => {
+    it('when nothing matches, is empty', () => {
+      expect(
+        Stream.of(1, 2, 3)
+          .takeWhile((element) => element === 4)
+          .count()
+      ).toBe(0);
+    });
+
+    it('when some match, then gets them', () => {
+      expect(
+        Stream.of(1, 2, 3)
+          .takeWhile((element) => element < 3)
+          .toArray()
+      ).toEqual([1, 2]);
+    });
+
+    it('stops taking, even when more later match', () => {
+      expect(
+        Stream.of(1, 2, 3, 2, 1)
+          .takeWhile((element) => element < 3)
+          .toArray()
+      ).toEqual([1, 2]);
+    });
+
+    it('takes none if the first element doesnt match', () => {
+      expect(
+        Stream.of(4, 1, 2, 2, 1)
+          .takeWhile((element) => element < 3)
+          .count()
+      ).toBe(0);
+    });
+  });
 });

@@ -39,7 +39,7 @@ console.log(firstEvenNumber.orElse('unknown'));
 ```
 
 Here the first even number is `2`. The `findFirst` method returns an `Optional<number>` in this case,
-which contains the `2`. The array is not converted into an equal-sized array by calling the `filter` function
+which contains the `2`. The array is not converted into a full filtered copied of the original by calling the `filter` function
 8 times. Instead, the filter function is called until we find our first even number and then we stop.
 
 The `Optional` class, also copied from Java, is a way to represent a value, or the absence of a value, as
@@ -58,3 +58,9 @@ npm i -g pnpm
 # prepare for pnpm
 pnpm i
 ```
+
+## Contributing
+
+This project is still incubating. Please feel free to raise issues, but we're not taking PRs at this time.
+
+
