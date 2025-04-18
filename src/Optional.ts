@@ -1,6 +1,7 @@
 import {
   Callable,
   Consumer,
+  identity,
   Mapper,
   noop,
   Predicate,
@@ -23,8 +24,34 @@ export default class Optional<T> {
    * @param contents the value (or absent) for the optional
    * @returns new Optional to represent the value
    */
-  public static of<T>(contents?: T) {
-    return new Optional<T>(contents);
+  public static of<T>(...contents: (T | undefined)[]): Optional<T> {
+    if (contents.length === 1) {
+      return new Optional<T>(contents[0]);
+    }
+    for (const item of contents) {
+      if (typeof item !== 'undefined') {
+        return new Optional<T>(item);
+      }
+    }
+    return Optional.empty();
+  }
+
+  /**
+   * Factory method to create an optional
+   * @param contents the value (or absent) for the optional
+   * @returns new Optional to represent the value
+   */
+  public static ofSupplier<T>(...contents: Supplier<T | undefined>[]) {
+    if (contents.length === 1) {
+      return new Optional<T>(contents[0]());
+    }
+    for (const supplier of contents) {
+      const item = supplier();
+      if (typeof item !== 'undefined') {
+        return new Optional<T>(item);
+      }
+    }
+    return Optional.empty();
   }
 
   /**
@@ -95,6 +122,26 @@ export default class Optional<T> {
       return this.contents;
     }
     throw errorSupplier();
+  }
+
+  /**
+   * Or this optional with an alternative - if ours is present, we keep our value
+   * otherwise we pick up a value from the next supplier until we run out
+   * @param orSupplier supplier of an alternative optional
+   * @returns the first non empty optional
+   */
+  public or(...orSuppliers: Supplier<Optional<T>>[]): Optional<T> {
+    if (this.isPresent()) {
+      return this;
+    }
+    if (orSuppliers.length == 1) {
+      return orSuppliers[0]();
+    }
+    return Stream.ofArray(orSuppliers)
+      .map((supplier) => supplier())
+      .filter((optional) => optional.isPresent())
+      .findFirst()
+      .flatMap(identity());
   }
 
   /**

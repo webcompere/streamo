@@ -23,6 +23,62 @@ describe('Optional', () => {
     });
   });
 
+  describe('coalescing', () => {
+    it('will provide no value if all undefined', () => {
+      expect(
+        Optional.of<string>(
+          undefined,
+          undefined,
+          undefined,
+          undefined
+        ).isEmpty()
+      ).toBeTruthy();
+    });
+
+    it('will provide truthy value if available', () => {
+      expect(
+        Optional.of<string>(
+          undefined,
+          undefined,
+          undefined,
+          undefined,
+          'result'
+        ).get()
+      ).toBe('result');
+    });
+
+    it('will provide empty value if all suppliers provide undefined', () => {
+      expect(
+        Optional.ofSupplier<string>(
+          () => undefined,
+          () => undefined,
+          () => undefined,
+          () => undefined
+        ).isEmpty()
+      ).toBeTruthy();
+    });
+
+    it('will provide truthy value if supplier can produce one', () => {
+      expect(
+        Optional.ofSupplier<string>(
+          () => undefined,
+          () => undefined,
+          () => undefined,
+          () => undefined,
+          () => 'result'
+        ).get()
+      ).toBe('result');
+    });
+
+    it('will provide truthy value if one supplier can produce one', () => {
+        expect(
+          Optional.ofSupplier<string>(
+            () => 'result'
+          ).get()
+        ).toBe('result');
+      });
+  });
+
   describe('getting', () => {
     it('get with contents is content', () => {
       expect(Optional.of('foo').get()).toBe('foo');
@@ -173,5 +229,31 @@ describe('Optional', () => {
       expect(ifPresent).not.toHaveBeenCalled();
       expect(orElse).toHaveBeenCalled();
     });
+  });
+
+  describe('or', () => {
+    it('will pick first value if present', () => {
+      expect(
+        Optional.of('foo')
+          .or(() => Optional.of('bar'))
+          .get()
+      ).toBe('foo');
+    });
+
+    it('will pick second value if first not present', () => {
+      expect(
+        Optional.empty<string>()
+          .or(() => Optional.of('bar'))
+          .get()
+      ).toBe('bar');
+    });
+
+    it('will pick first non empty value', () => {
+        expect(
+          Optional.empty<string>()
+            .or(() => Optional.empty(), () => Optional.of('bar'))
+            .get()
+        ).toBe('bar');
+      });
   });
 });
