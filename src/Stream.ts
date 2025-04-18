@@ -72,6 +72,7 @@ export default class Stream<T> {
   }
 
   private readonly iterable: Iterable<T>;
+  private hasTerminated = false;
 
   /**
    * Construct from an iterable
@@ -81,30 +82,42 @@ export default class Stream<T> {
     this.iterable = iterable;
   }
 
-  /**
-   * Convert the stream into an array
-   */
-  public toArray(): T[] {
-    const array: T[] = [];
-    while (this.iterable.hasNext()) {
-      array.push(this.iterable.getNext());
+  private terminal<R>(operation: Supplier<R>): R {
+    if (this.hasTerminated) {
+      throw new Error('Cannot reuse a terminated stream');
     }
-    return array;
+    this.hasTerminated = true;
+    return operation();
   }
 
   /**
-   * Convert the stream into an array
+   * Convert the stream into an array (terminal operation)
+   */
+  public toArray(): T[] {
+    return this.terminal(() => {
+      const array: T[] = [];
+      while (this.iterable.hasNext()) {
+        array.push(this.iterable.getNext());
+      }
+      return array;
+    });
+  }
+
+  /**
+   * Convert the stream into an array (terminal operation)
    */
   public toMap<K, V>(
     keyMapper: Mapper<T, K>,
     valueMapper: Mapper<T, V>
   ): Map<K, V> {
-    const map = new Map<K, V>();
-    while (this.iterable.hasNext()) {
-      const item = this.iterable.getNext();
-      map.set(keyMapper(item), valueMapper(item));
-    }
-    return map;
+    return this.terminal(() => {
+      const map = new Map<K, V>();
+      while (this.iterable.hasNext()) {
+        const item = this.iterable.getNext();
+        map.set(keyMapper(item), valueMapper(item));
+      }
+      return map;
+    });
   }
 
   /**
@@ -184,73 +197,88 @@ export default class Stream<T> {
   }
 
   /**
-   * Get the first item from the stream
+   * Get the first item from the stream (terminal operation)
+   * @param predicate optional filter to apply with find first
    */
-  public findFirst(): Optional<T> {
-    if (this.iterable.hasNext()) {
-      return Optional.of(this.iterable.getNext());
+  public findFirst(predicate?: Predicate<T>): Optional<T> {
+    if (predicate) {
+      return this.filter(predicate).findFirst();
     }
-    return Optional.empty();
+
+    return this.terminal(() => {
+      if (this.iterable.hasNext()) {
+        return Optional.of(this.iterable.getNext());
+      }
+      return Optional.empty();
+    });
   }
 
   /**
-   * Exit hatch the iterable we're working on behind the scenes
+   * Exit hatch the iterable we're working on behind the scenes (terminal operation)
    * @returns the iterable behind this stream
    */
   public getIterable(): Iterable<T> {
-    return this.iterable;
+    return this.terminal(() => this.iterable);
   }
 
   /**
-   * Does anything in the stream match the predicate?
+   * Does anything in the stream match the predicate? (terminal operation)
    * @param predicate the test
    * @returns true if anything matches
    */
   public anyMatch(predicate: Predicate<T>) {
-    while (this.iterable.hasNext()) {
-      if (predicate(this.iterable.getNext())) {
-        return true;
+    return this.terminal(() => {
+      while (this.iterable.hasNext()) {
+        if (predicate(this.iterable.getNext())) {
+          return true;
+        }
       }
-    }
-    return false;
+      return false;
+    });
   }
 
   /**
-   * Does anything in the stream match the predicate?
+   * Does anything in the stream match the predicate? (terminal operation)
    * @param predicate the test
    * @returns true if nothing matches
    */
   public noneMatch(predicate: Predicate<T>) {
-    while (this.iterable.hasNext()) {
-      if (predicate(this.iterable.getNext())) {
-        return false;
+    return this.terminal(() => {
+      while (this.iterable.hasNext()) {
+        if (predicate(this.iterable.getNext())) {
+          return false;
+        }
       }
-    }
-    return true;
+      return true;
+    });
   }
 
   /**
-   * Do all items match the predicate
+   * Do all items match the predicate (terminal operation)
    * @param predicate the predicate to test
    * @returns true if all match
    */
   public allMatch(predicate: Predicate<T>) {
-    while (this.iterable.hasNext()) {
-      if (!predicate(this.iterable.getNext())) {
-        return false;
+    return this.terminal(() => {
+      while (this.iterable.hasNext()) {
+        if (!predicate(this.iterable.getNext())) {
+          return false;
+        }
       }
-    }
-    return true;
+      return true;
+    });
   }
 
   /**
-   * Perform an item on each one
+   * Perform an item on each one (terminal operation)
    * @param consumer the action to perform on each
    */
   public forEach(consumer: Consumer<T>) {
-    while (this.iterable.hasNext()) {
-      consumer(this.iterable.getNext());
-    }
+    return this.terminal(() => {
+      while (this.iterable.hasNext()) {
+        consumer(this.iterable.getNext());
+      }
+    });
   }
 
   /**
@@ -279,7 +307,7 @@ export default class Stream<T> {
   }
 
   /**
-   * Find the maximum element if there is one
+   * Find the maximum element if there is one (terminal operation)
    * @param compareFn the comparator for min/max
    * @returns the max or optional empty if the stream is empty
    */
@@ -288,23 +316,25 @@ export default class Stream<T> {
   }
 
   /**
-   * Find the minimum element if there is one
+   * Find the minimum element if there is one (terminal operation)
    * @param compareFn the comparator for min/max
    * @returns the min or optional empty if the stream is empty
    */
   public min(compareFn: Comparator<T>): Optional<T> {
-    let min: T | undefined = undefined;
-    while (this.iterable.hasNext()) {
-      if (typeof min === 'undefined') {
-        min = this.iterable.getNext();
-      } else {
-        const next = this.iterable.getNext();
-        if (compareFn(min, next) > 0) {
-          min = next;
+    return this.terminal(() => {
+      let min: T | undefined = undefined;
+      while (this.iterable.hasNext()) {
+        if (typeof min === 'undefined') {
+          min = this.iterable.getNext();
+        } else {
+          const next = this.iterable.getNext();
+          if (compareFn(min, next) > 0) {
+            min = next;
+          }
         }
       }
-    }
-    return Optional.of(min);
+      return Optional.of(min);
+    });
   }
 
   /**
@@ -315,15 +345,17 @@ export default class Stream<T> {
   }
 
   /**
-   * Count the elements
+   * Count the elements (terminal operation)
    */
   public count() {
-    let i = 0;
-    while (this.iterable.hasNext()) {
-      this.iterable.getNext();
-      i++;
-    }
-    return i;
+    return this.terminal(() => {
+      let i = 0;
+      while (this.iterable.hasNext()) {
+        this.iterable.getNext();
+        i++;
+      }
+      return i;
+    });
   }
 
   /**
@@ -338,22 +370,23 @@ export default class Stream<T> {
   }
 
   /**
-   * Reduce the stream to a single value
+   * Reduce the stream to a single value (terminal operation)
    * @param accumulator the operator for combining the amassed result
    * @returns the first element if there's one, the accumulated result if more, or empty
    */
   public reduce(accumulator: BinaryOperator<T>): Optional<T> {
-    let resultSoFar = Optional.empty<T>();
-    while (this.iterable.hasNext()) {
-      const next = this.iterable.getNext();
-      if (resultSoFar.isEmpty()) {
-        resultSoFar = Optional.of(next);
-      } else {
-        resultSoFar = resultSoFar.map((item) => accumulator(item, next));
+    return this.terminal(() => {
+      let resultSoFar = Optional.empty<T>();
+      while (this.iterable.hasNext()) {
+        const next = this.iterable.getNext();
+        if (resultSoFar.isEmpty()) {
+          resultSoFar = Optional.of(next);
+        } else {
+          resultSoFar = resultSoFar.map((item) => accumulator(item, next));
+        }
       }
-    }
-
-    return resultSoFar;
+      return resultSoFar;
+    });
   }
 }
 
@@ -370,7 +403,7 @@ export class NumberStream extends Stream<number> {
   }
 
   /**
-   * Get max number
+   * Get max number (terminal operation)
    * @param compareFn a custom comparator, or can default to compareNumbers
    * @returns the max
    */
@@ -379,7 +412,7 @@ export class NumberStream extends Stream<number> {
   }
 
   /**
-   * Get min number
+   * Get min number (terminal operation)
    * @param compareFn a custom comparator, or can default to compareNumbers
    * @returns the min
    */

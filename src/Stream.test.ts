@@ -1,4 +1,10 @@
-import { compareNumbers, compareString, identity, reversed } from './functions';
+import {
+  compareNumbers,
+  compareString,
+  Consumer,
+  identity,
+  reversed,
+} from './functions';
 import Stream from './Stream';
 
 describe('streaming', () => {
@@ -107,6 +113,14 @@ describe('streaming', () => {
       expect(
         Stream.generate(() => 'foo')
           .findFirst()
+          .get()
+      ).toBe('foo');
+    });
+
+    it('can provide a predicate to findFirst as a shortcut to using filter', () => {
+      expect(
+        Stream.of('bar', 'foo')
+          .findFirst((x) => x === 'foo')
           .get()
       ).toBe('foo');
     });
@@ -382,5 +396,29 @@ describe('streaming', () => {
           .toArray()
       ).toEqual(['green', 'black']);
     });
+  });
+
+  describe('Terminal operations', () => {
+    it.each([
+      (stream: Stream<number>) => stream.toArray(),
+      (stream: Stream<number>) => stream.toMap(identity(), identity()),
+      (stream: Stream<number>) => stream.count(),
+      (stream: Stream<number>) => stream.min(compareNumbers),
+      (stream: Stream<number>) => stream.max(compareNumbers),
+      (stream: Stream<number>) => stream.getIterable(),
+      (stream: Stream<number>) => stream.allMatch((x) => x === 2),
+      (stream: Stream<number>) => stream.noneMatch((x) => x === 2),
+      (stream: Stream<number>) => stream.anyMatch((x) => x === 2),
+      (stream: Stream<number>) => stream.findFirst(),
+      (stream: Stream<number>) => stream.reduce((a, b) => a + b),
+    ])(
+      'cannot use a terminal operation more than once',
+      (operation: Consumer<Stream<number>>) => {
+        const stream = Stream.of(1, 2, 3, 4, 5);
+        operation(stream);
+
+        expect(() => operation(stream)).toThrow();
+      }
+    );
   });
 });
