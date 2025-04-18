@@ -41,3 +41,12 @@ export const identity =
   <T>() =>
   (t: T): T =>
     t;
+
+/**
+ * Get the opposite of a predicate
+ * @param predicate the predicate to not
+ * @returns a predicate inverting the input predicate
+ */
+export const not = <T>(predicate: Predicate<T>) => {
+  return (input: T) => !predicate(input);
+};
