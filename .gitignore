@@ -136,3 +136,6 @@ dist
 .pnp.*
 
 build/
+
+junit.xml
+test-report.junit.xml

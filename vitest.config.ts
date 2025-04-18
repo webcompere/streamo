@@ -3,6 +3,13 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   test: {
+    reporters: [
+      'default',
+      ['junit', { suiteName: 'UI tests' }]
+    ],
+    outputFile: {
+      junit: './test-report.junit.xml',
+    },
     globals: true,
     coverage: {
       exclude: ['build/**', 'build.js', './src/index.ts', 'vitest.config.ts'],
