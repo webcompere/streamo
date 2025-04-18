@@ -71,12 +71,8 @@ describe('Optional', () => {
     });
 
     it('will provide truthy value if one supplier can produce one', () => {
-        expect(
-          Optional.ofSupplier<string>(
-            () => 'result'
-          ).get()
-        ).toBe('result');
-      });
+      expect(Optional.ofSupplier<string>(() => 'result').get()).toBe('result');
+    });
   });
 
   describe('getting', () => {
@@ -249,11 +245,14 @@ describe('Optional', () => {
     });
 
     it('will pick first non empty value', () => {
-        expect(
-          Optional.empty<string>()
-            .or(() => Optional.empty(), () => Optional.of('bar'))
-            .get()
-        ).toBe('bar');
-      });
+      expect(
+        Optional.empty<string>()
+          .or(
+            () => Optional.empty(),
+            () => Optional.of('bar')
+          )
+          .get()
+      ).toBe('bar');
+    });
   });
 });
