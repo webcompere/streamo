@@ -19,6 +19,8 @@ import {
 } from './Iterables';
 import Optional from './Optional';
 
+export type Indexed<T> = { index: number; value: T };
+
 export default class Stream<T> {
   /**
    * Convert an array to a stream
@@ -103,6 +105,16 @@ export default class Stream<T> {
    */
   public map<R>(mapper: Mapper<T, R>): Stream<R> {
     return new Stream<R>(new MappingIterable(this.iterable, mapper));
+  }
+
+  /**
+   * Add an index value to the stream so it's `{index, value}` with a 0-based
+   * index. Note: the indexing starts at this point in the chain of filters etc.
+   * @returns a stream of items with the index added
+   */
+  public indexed(): Stream<Indexed<T>> {
+    let index = 0;
+    return this.map((value) => ({ index: index++, value }));
   }
 
   /**

@@ -272,4 +272,25 @@ describe('streaming', () => {
       ).toBe(0);
     });
   });
+
+  describe('indexed', () => {
+    it('will provide indexes', () => {
+      expect(
+        Stream.of(9, 8, 7, 6)
+          .indexed()
+          .map((item) => item.index)
+          .toArray()
+      ).toEqual([0, 1, 2, 3]);
+    });
+
+    it('will allow us to filter based on the nth item', () => {
+      expect(
+        Stream.of('blue', 'green', 'white', 'black')
+          .indexed()
+          .filter((item) => item.index % 2 !== 0)
+          .map((item) => item.value)
+          .toArray()
+      ).toEqual(['green', 'black']);
+    });
+  });
 });
