@@ -1,5 +1,7 @@
 # Streamo
 
+[![codecov](https://codecov.io/gh/webcompere/streamo/graph/badge.svg?token=tDhFT9GVCf)](https://codecov.io/gh/webcompere/streamo)
+
 A TypeScript implementation of collection streaming. Loosely based on Java's Streaming API.
 
 ## Primary Use Case and Rationale

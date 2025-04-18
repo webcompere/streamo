@@ -28,9 +28,9 @@ jobs:
 
       - name: 🛠️ Build project
         run: pnpm i && pnpm run ci
-        
+
       - name: Upload coverage reports to Codecov
-          uses: codecov/codecov-action@v5
-          with:
-            token: ${{ secrets.CODECOV_TOKEN }}
-            slug: webcompere/streamo
+        uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          slug: webcompere/streamo
