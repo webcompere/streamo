@@ -100,6 +100,26 @@ describe('streaming', () => {
     });
   });
 
+  describe('iterate', () => {
+    it('can provide a series of values', () => {
+      expect(
+        Stream.iterate(0, (a) => a + 1)
+          .limit(4)
+          .toArray()
+      ).toEqual([0, 1, 2, 3]);
+    });
+
+    it('can provide a series of values, self terminating at the last', () => {
+      expect(
+        Stream.iterate(
+          0,
+          (a) => a + 1,
+          (a) => a < 4
+        ).toArray()
+      ).toEqual([0, 1, 2, 3]);
+    });
+  });
+
   describe('find first', () => {
     it('will find the first item when there is one', () => {
       expect(Stream.of(1).findFirst().get()).toBe(1);
@@ -182,6 +202,12 @@ describe('streaming', () => {
     it('will apply a sort to an unsorted stream', () => {
       expect(Stream.of(5, 2, 1, 3, 4).sorted().toArray()).toEqual([
         1, 2, 3, 4, 5,
+      ]);
+    });
+
+    it('can sort numbers correctly when numeric', () => {
+      expect(Stream.ofNumbers(1, 10, 2, 25, 99, 9).sorted().toArray()).toEqual([
+        1, 2, 9, 10, 25, 99,
       ]);
     });
 
@@ -314,6 +340,14 @@ describe('streaming', () => {
 
     it('creates a range closed', () => {
       expect(Stream.ofRangeClosed(0, 4).sum()).toBe(10);
+    });
+
+    it('will create a numeric stream directly', () => {
+      expect(Stream.ofNumbers(1, 2, 3).sum()).toBe(6);
+    });
+
+    it('will create a numeric stream from an array', () => {
+      expect(Stream.ofNumericArray([1, 2, 3]).sum()).toBe(6);
     });
   });
 

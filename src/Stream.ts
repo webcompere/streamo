@@ -1,4 +1,5 @@
 import {
+  alwaysTrue,
   BinaryOperator,
   Comparator,
   compareNumbers,
@@ -8,6 +9,7 @@ import {
   Predicate,
   reversed,
   Supplier,
+  UnaryOperator,
 } from './functions';
 import {
   Iterable,
@@ -25,6 +27,10 @@ import Optional from './Optional';
 
 export type Indexed<T> = { index: number; value: T };
 
+/**
+ * Contains factory methods to create Streams. Also models the general stream, which
+ * wraps an iterator over some source.
+ */
 export default class Stream<T> {
   /**
    * Convert an array to a stream
@@ -42,14 +48,50 @@ export default class Stream<T> {
     return Stream.ofArray(elements);
   }
 
+  /**
+   * Create a number stream with elements
+   * @param elements the elements of the stream
+   * @returns a number stream which has special numeric processing
+   */
+  public static ofNumbers(...elements: number[]): NumberStream {
+    return new NumberStream(new ArrayIterable(elements));
+  }
+
+  /**
+   * Create a number stream with elements
+   * @param elements the elements of the stream as an array
+   * @returns a number stream which has special numeric processing
+   */
+  public static ofNumericArray(elements: number[]): NumberStream {
+    return new NumberStream(new ArrayIterable(elements));
+  }
+
+  /**
+   * Create a number stream based on a numeric range that steps up by one each time
+   * @param min the first number in the range
+   * @param maxExclusive the number after the last in the range
+   * @returns a number stream which has special numeric processing
+   */
   public static ofRange(min: number, maxExclusive: number) {
     return new NumberStream(new RangeIterable(min, maxExclusive));
   }
 
+  /**
+   * Create a number stream based on a numeric range that steps up by one each time
+   * @param min the first number in the range
+   * @param maxInclusive the last in the range
+   * @returns a number stream which has special numeric processing
+   */
   public static ofRangeClosed(min: number, maxInclusive: number) {
     return new NumberStream(new RangeIterable(min, maxInclusive + 1));
   }
 
+  /**
+   * Produce a single stream made of multiple substreams, all the elements will be
+   * sequenced out of each substream
+   * @param streams the streams to add together
+   * @returns a single stream formed of the sub streams
+   */
   public static concat<T>(...streams: Stream<T>[]) {
     return Stream.of(...streams).flatMap(identity());
   }
@@ -61,6 +103,27 @@ export default class Stream<T> {
    */
   public static generate<T>(generator: Supplier<T>): Stream<T> {
     return new Stream<T>(new SupplyingIterable<T>(generator));
+  }
+
+  /**
+   * Generate a stream by iterating over a function
+   * @param seed the first value of the stream
+   * @param next the function that produces value n, by transforming value n - 1
+   * @param hasNext the function that determines whether the stream continues - this is applied to each element,
+   * including the seed, when it's generated
+   */
+  public static iterate<T>(
+    seed: T,
+    next: UnaryOperator<T>,
+    hasNext: Predicate<T> = alwaysTrue
+  ): Stream<T> {
+    // compose the iterator as a generator with a takeWhile
+    let current = seed;
+    return this.generate(() => {
+      const value = current;
+      current = next(value);
+      return value;
+    }).takeWhile(hasNext);
   }
 
   /**
@@ -400,6 +463,12 @@ export class NumberStream extends Stream<number> {
    */
   public sum(): number {
     return this.reduce((a, b) => a + b).orElse(0);
+  }
+
+  public sorted(
+    compareFn: Comparator<number> = compareNumbers
+  ): Stream<number> {
+    return super.sorted(compareFn);
   }
 
   /**

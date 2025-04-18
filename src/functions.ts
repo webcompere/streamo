@@ -29,6 +29,11 @@ export type Callable = () => void;
 export type BinaryOperator<T> = (a: T, b: T) => T;
 
 /**
+ * A function that takes an input of one type and transforms it to a value of the same type
+ */
+export type UnaryOperator<T> = Mapper<T, T>;
+
+/**
  * A function that does nothing
  */
 export const noop: Callable = () => {};
@@ -50,6 +55,13 @@ export const identity =
 export const not = <T>(predicate: Predicate<T>) => {
   return (input: T) => !predicate(input);
 };
+
+/**
+ * Predicate that's always true
+ * @param a any input
+ * @returns a function that always returns true
+ */
+export const alwaysTrue = <T>(a: T) => true;
 
 /**
  * A.K.A. compareFn as used in arrays
