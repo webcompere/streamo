@@ -90,11 +90,15 @@ describe('Optional', () => {
 
   describe('flat mapping', () => {
     it('with no value maps to empty', () => {
-      expect(new Optional<string>().flatMap((a) => Optional.of('' + a)).isEmpty()).toBeTruthy();
+      expect(
+        new Optional<string>().flatMap((a) => Optional.of('' + a)).isEmpty()
+      ).toBeTruthy();
     });
 
     it('with no value maps to value', () => {
-      expect(new Optional('foo').flatMap((a) => Optional.of('bar ' + a)).get()).toBe('bar foo');
+      expect(
+        new Optional('foo').flatMap((a) => Optional.of('bar ' + a)).get()
+      ).toBe('bar foo');
     });
   });
 
@@ -155,19 +159,19 @@ describe('Optional', () => {
     });
 
     it('will do the first thing if present', () => {
-        const ifPresent = vi.fn();
-        const orElse = vi.fn();
-        Optional.of('foo').ifPresentOrElse(ifPresent, orElse);
-        expect(ifPresent).toHaveBeenCalledWith('foo');
-        expect(orElse).not.toHaveBeenCalled();
-    })
+      const ifPresent = vi.fn();
+      const orElse = vi.fn();
+      Optional.of('foo').ifPresentOrElse(ifPresent, orElse);
+      expect(ifPresent).toHaveBeenCalledWith('foo');
+      expect(orElse).not.toHaveBeenCalled();
+    });
 
     it('will do the other thing if not present', () => {
-        const ifPresent = vi.fn();
-        const orElse = vi.fn();
-        Optional.empty().ifPresentOrElse(ifPresent, orElse);
-        expect(ifPresent).not.toHaveBeenCalled();
-        expect(orElse).toHaveBeenCalled();
-    })
+      const ifPresent = vi.fn();
+      const orElse = vi.fn();
+      Optional.empty().ifPresentOrElse(ifPresent, orElse);
+      expect(ifPresent).not.toHaveBeenCalled();
+      expect(orElse).toHaveBeenCalled();
+    });
   });
 });

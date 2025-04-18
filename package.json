@@ -4,9 +4,12 @@
   "description": "A streaming library inspired by Java Streams",
   "main": "index.ts",
   "scripts": {
+    "ci": "pnpm lint && pnpm build && pnpm test",
     "build": "node build.js",
     "test": "vitest run --coverage",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "lint": "prettier -c src",
+    "lint:fix": "prettier -w src"
   },
   "exports": {
     "import": "./build/index.mjs",
