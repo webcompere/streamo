@@ -273,6 +273,32 @@ describe('streaming', () => {
     });
   });
 
+  describe('drop while', () => {
+    it('will skip nothing if no elements', () => {
+      expect(
+        Stream.empty<string>()
+          .dropWhile((s) => s === '')
+          .count()
+      ).toBe(0);
+    });
+
+    it('will skip elements matching the filter', () => {
+      expect(
+        Stream.of('', '', 'red')
+          .dropWhile((s) => s === '')
+          .toArray()
+      ).toEqual(['red']);
+    });
+
+    it('will skip nothing if first element does not match filter', () => {
+      expect(
+        Stream.of('blue', '', '', 'red')
+          .dropWhile((s) => s === '')
+          .toArray()
+      ).toEqual(['blue', '', '', 'red']);
+    });
+  });
+
   describe('indexed', () => {
     it('will provide indexes', () => {
       expect(

@@ -1,4 +1,4 @@
-import { Mapper, Predicate, Supplier } from './functions';
+import { Mapper, not, Predicate, Supplier } from './functions';
 import Optional from './Optional';
 
 export interface Iterable<T> {
@@ -81,6 +81,43 @@ export class TakeWhileIterable<T> implements Iterable<T> {
       this.first = false;
     } else if (this.next.isPresent() && this.source.hasNext()) {
       this.next = Optional.of(this.source.getNext()).filter(this.predicate);
+    }
+
+    return this.next.isPresent();
+  }
+  getNext(): T {
+    return this.next.orElseThrow(() => new Error('No elements remaining'));
+  }
+}
+
+/**
+ * Iterates over another iterable skipping the first few elements where the predicate is matched
+ */
+export class DropWhileIterable<T> implements Iterable<T> {
+  private first = true;
+  private next: Optional<T> = Optional.empty();
+  private readonly source: Iterable<T>;
+  private readonly predicate: Predicate<T>;
+
+  constructor(source: Iterable<T>, predicate: Predicate<T>) {
+    this.source = source;
+    this.predicate = predicate;
+  }
+
+  hasNext(): boolean {
+    if (this.first) {
+      // chew through the items matching the filter until we get one which
+      // doesn't match the filter
+      this.first = false;
+      while (this.source.hasNext() && this.next.isEmpty()) {
+        this.next = Optional.of(this.source.getNext()).filter(
+          not(this.predicate)
+        );
+      }
+    } else if (this.source.hasNext()) {
+      this.next = Optional.of(this.source.getNext());
+    } else {
+      this.next = Optional.empty();
     }
 
     return this.next.isPresent();
