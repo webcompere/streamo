@@ -7,9 +7,9 @@ export default defineConfig({
     coverage: {
       exclude: ['build/**', 'build.js', './src/index.ts', 'vitest.config.ts'],
       thresholds: {
-        lines: 99,
-        branches: 99,
-        statements: 99,
+        lines: 100,
+        branches: 100,
+        statements: 100,
         functions: 100,
       },
     },

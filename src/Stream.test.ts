@@ -1,4 +1,4 @@
-import { identity } from './functions';
+import { compareNumbers, compareString, identity, reversed } from './functions';
 import Stream from './Stream';
 
 describe('streaming', () => {
@@ -157,6 +157,70 @@ describe('streaming', () => {
       expect(Stream.of(1, 1, 2, 2, 3, 3, 4, 4).distinct().toArray()).toEqual([
         1, 2, 3, 4,
       ]);
+    });
+  });
+
+  describe('sorted', () => {
+    it('will apply a sort to an already sorted stream', () => {
+      expect(Stream.of(1, 2, 3).sorted().toArray()).toEqual([1, 2, 3]);
+    });
+
+    it('will apply a sort to an unsorted stream', () => {
+      expect(Stream.of(5, 2, 1, 3, 4).sorted().toArray()).toEqual([
+        1, 2, 3, 4, 5,
+      ]);
+    });
+
+    it('will apply a sort to an unsorted stream with custom comparator', () => {
+      expect(Stream.of(5, 2, 1, 3, 4).sorted(compareNumbers).toArray()).toEqual(
+        [1, 2, 3, 4, 5]
+      );
+    });
+
+    it('will apply a sort to an unsorted stream with custom comparator in reverse order', () => {
+      expect(
+        Stream.of(5, 2, 1, 3, 4).sorted(reversed(compareNumbers)).toArray()
+      ).toEqual([5, 4, 3, 2, 1]);
+    });
+
+    it('will apply a sort to an unsorted stream with default comparator', () => {
+      expect(Stream.of('red', 'green', 'blue').sorted().toArray()).toEqual([
+        'blue',
+        'green',
+        'red',
+      ]);
+    });
+
+    it('will apply a sort to an unsorted stream with custom string comparator', () => {
+      expect(
+        Stream.of('red', 'green', 'blue').sorted(compareString).toArray()
+      ).toEqual(['blue', 'green', 'red']);
+    });
+  });
+
+  describe('min and max', () => {
+    it('can find the minimum of a stream', () => {
+      expect(Stream.of(5, 4, 3, 2, 1).min(compareNumbers).get()).toBe(1);
+    });
+
+    it('can find the maximum of a stream', () => {
+      expect(Stream.of(5, 4, 3, 2, 1).max(compareNumbers).get()).toBe(5);
+    });
+
+    it('can find no maximum of an empty stream', () => {
+      expect(Stream.empty<number>().max(compareNumbers).get()).toBeUndefined();
+    });
+
+    it('can use numeric comparison max for free with numberstream', () => {
+      expect(Stream.of(5, 4, 3, 2, 1).mapToNumber(identity()).max().get()).toBe(
+        5
+      );
+    });
+
+    it('can use numeric comparison min for free with numberstream', () => {
+      expect(Stream.of(5, 4, 3, 2, 1).mapToNumber(identity()).min().get()).toBe(
+        1
+      );
     });
   });
 

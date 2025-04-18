@@ -1,9 +1,12 @@
 import {
   BinaryOperator,
+  Comparator,
+  compareNumbers,
   Consumer,
   identity,
   Mapper,
   Predicate,
+  reversed,
   Supplier,
 } from './functions';
 import {
@@ -70,6 +73,10 @@ export default class Stream<T> {
 
   private readonly iterable: Iterable<T>;
 
+  /**
+   * Construct from an iterable
+   * @param iterable the iterable with the contents
+   */
   constructor(iterable: Iterable<T>) {
     this.iterable = iterable;
   }
@@ -272,6 +279,42 @@ export default class Stream<T> {
   }
 
   /**
+   * Find the maximum element if there is one
+   * @param compareFn the comparator for min/max
+   * @returns the max or optional empty if the stream is empty
+   */
+  public max(compareFn: Comparator<T>): Optional<T> {
+    return this.min(reversed(compareFn));
+  }
+
+  /**
+   * Find the minimum element if there is one
+   * @param compareFn the comparator for min/max
+   * @returns the min or optional empty if the stream is empty
+   */
+  public min(compareFn: Comparator<T>): Optional<T> {
+    let min: T | undefined = undefined;
+    while (this.iterable.hasNext()) {
+      if (typeof min === 'undefined') {
+        min = this.iterable.getNext();
+      } else {
+        const next = this.iterable.getNext();
+        if (compareFn(min, next) > 0) {
+          min = next;
+        }
+      }
+    }
+    return Optional.of(min);
+  }
+
+  /**
+   * Turn this into a sorted stream
+   */
+  public sorted(compareFn?: Comparator<T>): Stream<T> {
+    return Stream.ofArray(this.toArray().sort(compareFn));
+  }
+
+  /**
    * Count the elements
    */
   public count() {
@@ -324,5 +367,23 @@ export class NumberStream extends Stream<number> {
    */
   public sum(): number {
     return this.reduce((a, b) => a + b).orElse(0);
+  }
+
+  /**
+   * Get max number
+   * @param compareFn a custom comparator, or can default to compareNumbers
+   * @returns the max
+   */
+  public max(compareFn: Comparator<number> = compareNumbers): Optional<number> {
+    return super.max(compareFn);
+  }
+
+  /**
+   * Get min number
+   * @param compareFn a custom comparator, or can default to compareNumbers
+   * @returns the min
+   */
+  public min(compareFn: Comparator<number> = compareNumbers): Optional<number> {
+    return super.min(compareFn);
   }
 }

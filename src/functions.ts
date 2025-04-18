@@ -50,3 +50,34 @@ export const identity =
 export const not = <T>(predicate: Predicate<T>) => {
   return (input: T) => !predicate(input);
 };
+
+/**
+ * A.K.A. compareFn as used in arrays
+ */
+export type Comparator<T> = (a: T, b: T) => number;
+
+/**
+ * Reverse a comparator
+ * @param comparator the comparator to reverse
+ * @returns a reverse of a comparator
+ */
+export const reversed =
+  <T>(comparator: Comparator<T>): Comparator<T> =>
+  (a, b) =>
+    -comparator(a, b);
+
+/**
+ * Comparator for numbers
+ * @param a first number
+ * @param b second number
+ * @returns forwards order
+ */
+export const compareNumbers: Comparator<number> = (a, b) => a - b;
+
+/**
+ * Compare strings
+ * @param a first string
+ * @param b second string
+ * @returns a comparator that uses `localeCompare`
+ */
+export const compareString: Comparator<string> = (a, b) => a.localeCompare(b);

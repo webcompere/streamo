@@ -84,8 +84,6 @@ This project is still incubating. Please feel free to raise issues, but we're no
 
 - terminal operations
 - iterate
-- sorted
-- min/max
 - more reducers
 - collectors
 - gather
