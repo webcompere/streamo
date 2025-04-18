@@ -1,5 +1,7 @@
 # Streamo
 
+![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)
+![Build](https://github.com/webcompere/streamo/actions/workflows/build.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/webcompere/streamo/graph/badge.svg?token=tDhFT9GVCf)](https://codecov.io/gh/webcompere/streamo)
 
 A TypeScript implementation of collection streaming. Loosely based on Java's Streaming API.
