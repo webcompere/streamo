@@ -141,7 +141,7 @@ export default class Optional<T> {
       .map((supplier) => supplier())
       .filter((optional) => optional.isPresent())
       .findFirst()
-      .flatMap(identity());
+      .flatMap(identity);
   }
 
   /**

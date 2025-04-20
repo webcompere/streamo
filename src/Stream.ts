@@ -1,3 +1,4 @@
+import { Collector, collect } from './Collectors';
 import {
   alwaysTrue,
   BinaryOperator,
@@ -93,7 +94,7 @@ export default class Stream<T> {
    * @returns a single stream formed of the sub streams
    */
   public static concat<T>(...streams: Stream<T>[]) {
-    return Stream.of(...streams).flatMap(identity());
+    return Stream.of(...streams).flatMap(identity);
   }
 
   /**
@@ -495,6 +496,15 @@ export default class Stream<T> {
     return this.map((element) => `${element}`)
       .reduce((a, b) => `${a}${delimiter}${b}`)
       .orElse('');
+  }
+
+  /**
+   * Collect with a collector
+   * @param collector the collector to use - see {@link Collectors}
+   * @returns the result of collecting
+   */
+  public collect<A, R>(collector: Collector<T, A, R>): R {
+    return collect(this.getIterable(), collector);
   }
 }
 

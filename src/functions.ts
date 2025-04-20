@@ -42,10 +42,7 @@ export const noop: Callable = () => {};
  * the identity function
  * @returns the identity function of any type
  */
-export const identity =
-  <T>() =>
-  (t: T): T =>
-    t;
+export const identity = <T>(t: T): T => t;
 
 /**
  * Get the opposite of a predicate

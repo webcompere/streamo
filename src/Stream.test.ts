@@ -1,3 +1,4 @@
+import Collectors from './Collectors';
 import {
   compareNumbers,
   compareString,
@@ -252,13 +253,13 @@ describe('streaming', () => {
     });
 
     it('can use numeric comparison max for free with numberstream', () => {
-      expect(Stream.of(5, 4, 3, 2, 1).mapToNumber(identity()).max().get()).toBe(
+      expect(Stream.of(5, 4, 3, 2, 1).mapToNumber(identity).max().get()).toBe(
         5
       );
     });
 
     it('can use numeric comparison min for free with numberstream', () => {
-      expect(Stream.of(5, 4, 3, 2, 1).mapToNumber(identity()).min().get()).toBe(
+      expect(Stream.of(5, 4, 3, 2, 1).mapToNumber(identity).min().get()).toBe(
         1
       );
     });
@@ -297,7 +298,7 @@ describe('streaming', () => {
       expect(
         Stream.of({ name: 'John', age: 41 }, { name: 'Bill', age: 23 }).toMap(
           (item) => item.name,
-          identity()
+          identity
         )
       ).toEqual(expectedMap);
     });
@@ -330,17 +331,13 @@ describe('streaming', () => {
 
     it('can reduce no items to the initial value', () => {
       expect(
-        Stream.empty<string>().reduceFrom(
-          'foo',
-          (a, b) => `${a}${b}`,
-          identity()
-        )
+        Stream.empty<string>().reduceFrom('foo', (a, b) => `${a}${b}`, identity)
       ).toBe('foo');
     });
 
     it('can reduce multiple items by combining', () => {
       expect(
-        Stream.of('bar').reduceFrom('foo', (a, b) => `${a} ${b}`, identity())
+        Stream.of('bar').reduceFrom('foo', (a, b) => `${a} ${b}`, identity)
       ).toBe('foo bar');
     });
 
@@ -377,7 +374,7 @@ describe('streaming', () => {
 
   describe('Numeric', () => {
     it('can add up numbers', () => {
-      expect(Stream.of(1, 2, 3).mapToNumber(identity()).sum()).toBe(6);
+      expect(Stream.of(1, 2, 3).mapToNumber(identity).sum()).toBe(6);
     });
 
     it('creates a range', () => {
@@ -512,10 +509,18 @@ describe('streaming', () => {
     });
   });
 
+  describe('collection', () => {
+    it('can use toList instead of built in toList', () => {
+      expect(
+        Stream.of('red', 'green', 'blue').collect(Collectors.toList())
+      ).toEqual(['red', 'green', 'blue']);
+    });
+  });
+
   describe('Terminal operations', () => {
     it.each([
       (stream: Stream<number>) => stream.toArray(),
-      (stream: Stream<number>) => stream.toMap(identity(), identity()),
+      (stream: Stream<number>) => stream.toMap(identity, identity),
       (stream: Stream<number>) => stream.count(),
       (stream: Stream<number>) => stream.min(compareNumbers),
       (stream: Stream<number>) => stream.max(compareNumbers),
@@ -526,7 +531,7 @@ describe('streaming', () => {
       (stream: Stream<number>) => stream.findFirst(),
       (stream: Stream<number>) => stream.reduce((a, b) => a + b),
       (stream: Stream<number>) =>
-        stream.reduceFrom(1, (a, b) => a + b, identity()),
+        stream.reduceFrom(1, (a, b) => a + b, identity),
     ])(
       'cannot use a terminal operation more than once',
       (operation: Consumer<Stream<number>>) => {
