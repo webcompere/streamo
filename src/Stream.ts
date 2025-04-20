@@ -134,7 +134,7 @@ export default class Stream<T> {
     return Stream.of<T>();
   }
 
-  private readonly iterable: Iterable<T>;
+  private iterable: Iterable<T>;
   private hasTerminated = false;
 
   /**
@@ -226,8 +226,10 @@ export default class Stream<T> {
    * Filter the stream
    * @param predicate allows the items to pass through to target stream
    */
-  public filter(predicate: Predicate<T>): Stream<T> {
-    return new Stream<T>(new FilteringIterable(this.iterable, predicate));
+  public filter(predicate: Predicate<T>) {
+    return this.substituteIterable(
+      new FilteringIterable(this.iterable, predicate)
+    );
   }
 
   /**
@@ -236,8 +238,10 @@ export default class Stream<T> {
    * @param predicate the condition to pass
    * @returns a stream which only takes while the filter is matched
    */
-  public takeWhile(predicate: Predicate<T>): Stream<T> {
-    return new Stream<T>(new TakeWhileIterable(this.iterable, predicate));
+  public takeWhile(predicate: Predicate<T>) {
+    return this.substituteIterable(
+      new TakeWhileIterable(this.iterable, predicate)
+    );
   }
 
   /**
@@ -246,8 +250,10 @@ export default class Stream<T> {
    * @param predicate the condition to pass
    * @returns a stream which only takes while the filter is matched
    */
-  public dropWhile(predicate: Predicate<T>): Stream<T> {
-    return new Stream<T>(new DropWhileIterable(this.iterable, predicate));
+  public dropWhile(predicate: Predicate<T>) {
+    return this.substituteIterable(
+      new DropWhileIterable(this.iterable, predicate)
+    );
   }
 
   /**
@@ -255,8 +261,13 @@ export default class Stream<T> {
    * @param max the maximum number of items
    * @returns a new stream which won't go past the max
    */
-  public limit(max: number): Stream<T> {
-    return new Stream<T>(new LimitingIterable<T>(max, this.iterable));
+  public limit(max: number) {
+    return this.substituteIterable(new LimitingIterable<T>(max, this.iterable));
+  }
+
+  private substituteIterable(newIterable: Iterable<T>) {
+    this.iterable = newIterable;
+    return this;
   }
 
   /**
@@ -358,7 +369,7 @@ export default class Stream<T> {
   /**
    * Turn this into a distinct stream
    */
-  public distinct(): Stream<T> {
+  public distinct() {
     const seen = new Set<T>();
     return this.filter((item) => {
       const isNew = !seen.has(item);

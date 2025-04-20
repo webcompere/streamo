@@ -395,6 +395,40 @@ describe('streaming', () => {
     it('will create a numeric stream from an array', () => {
       expect(Stream.ofNumericArray([1, 2, 3]).sum()).toBe(6);
     });
+
+    it('will keep a number stream as itself for limit', () => {
+      expect(Stream.ofNumericArray([1, 2, 3, 4, 5]).limit(3).sum()).toBe(6);
+    });
+
+    it('will keep a number stream as itself for filter', () => {
+      expect(
+        Stream.ofNumericArray([1, 2, 3, 4, 5])
+          .filter((num) => num % 2 === 0)
+          .sum()
+      ).toBe(6);
+    });
+
+    it('will keep a number stream as itself for takeWhile', () => {
+      expect(
+        Stream.ofNumericArray([1, 2, 3, 4, 5])
+          .takeWhile((num) => num < 4)
+          .sum()
+      ).toBe(6);
+    });
+
+    it('will keep a number stream as itself for dropWhile', () => {
+      expect(
+        Stream.ofNumericArray([1, 2, 3, 4, 5])
+          .dropWhile((num) => num < 4)
+          .sum()
+      ).toBe(9);
+    });
+
+    it('will keep a number stream as itself for distinct', () => {
+      expect(
+        Stream.ofNumericArray([1, 1, 2, 2, 3, 3, 3]).distinct().sum()
+      ).toBe(6);
+    });
   });
 
   describe('take while', () => {
