@@ -50,6 +50,29 @@ export default class Stream<T> {
   }
 
   /**
+   * Convert an object into a stream of entries
+   * @param object the object to read
+   * @returns a stream of {@link Entry} objects
+   */
+  public static ofObject<V>(object: Record<string, V>) {
+    return Stream.ofArray(Object.entries(object)).map(([key, value]) => ({
+      key,
+      value,
+    }));
+  }
+
+  /**
+   * Convert a map into a stream of entries
+   * @param map the map to read
+   * @returns a stream of {@link Entry} objects
+   */
+  public static ofMap<K, V>(map: Map<K, V>) {
+    const iterator = map.entries();
+
+    return Stream.generateFinite(() => Optional.of(iterator.next().value));
+  }
+
+  /**
    * Create a number stream with elements
    * @param elements the elements of the stream
    * @returns a number stream which has special numeric processing
@@ -104,6 +127,17 @@ export default class Stream<T> {
    */
   public static generate<T>(generator: Supplier<T>): Stream<T> {
     return new Stream<T>(new SupplyingIterable<T>(generator));
+  }
+
+  /**
+   * Generate using a single method which returns optional values for which optional empty means stop
+   * @param generator generate using a generator which returns optional values, for which empty means stop
+   * @returns a stream of the values from within the optional
+   */
+  public static generateFinite<T>(generator: Supplier<Optional<T>>): Stream<T> {
+    return Stream.generate(generator)
+      .takeWhile((optional) => optional.isPresent())
+      .map((optional) => optional.orElseThrow());
   }
 
   /**

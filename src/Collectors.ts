@@ -7,7 +7,7 @@ import { Iterable } from './Iterables';
  * which operates on the accumualator and element (T) and then a finisher to transform
  * the accumulator to the final result
  */
-export type Collector<T, A, R> = {
+export interface Collector<T, A, R> {
   /**
    * Supplies an empty accumulator
    */
@@ -24,7 +24,7 @@ export type Collector<T, A, R> = {
    * Convert the accumulator into the final type
    */
   finisher: Mapper<A, R>;
-};
+}
 
 /**
  * Perform general collection over an iterable with a collector
@@ -43,11 +43,19 @@ export const collect = <T, A, R>(
   return collector.finisher(accumulated);
 };
 
+/**
+ * An entry from a map or record
+ */
+export type Entry<K, V> = { key: K; value: V };
+
+/**
+ * Ready made collector operations
+ */
 export default class Collectors {
   /**
    * Basic collector, which applies collection to a stream or iterable to produce a list
    */
-  public static toList<T>(): Collector<T, T[], T[]> {
+  public static toArray<T>(): Collector<T, T[], T[]> {
     return {
       supplier: () => [],
       accumulator: (a, t) => a.push(t),
@@ -55,6 +63,12 @@ export default class Collectors {
     };
   }
 
+  /**
+   * Collect the items in the iterable/stream into key value pairs in an object
+   * @param keyMapper map the stream items into the string key
+   * @param valueMapper map the stream items into the value object
+   * @returns a record
+   */
   public static toObject<T, V>(
     keyMapper: Mapper<T, string>,
     valueMapper: Mapper<T, V>
@@ -64,5 +78,33 @@ export default class Collectors {
       accumulator: (a, t) => (a[keyMapper(t)] = valueMapper(t)),
       finisher: identity,
     };
+  }
+
+  /**
+   * Collect to a map
+   * @param keyMapper map from the item to the key part of the map
+   * @param valueMapper map from the item to the value part of the map
+   * @returns a collector for producing a Map
+   */
+  public static toMap<T, K, V>(
+    keyMapper: Mapper<T, K>,
+    valueMapper: Mapper<T, V>
+  ): Collector<T, Map<K, V>, Map<K, V>> {
+    return {
+      supplier: () => new Map<K, V>(),
+      accumulator: (a, t) => a.set(keyMapper(t), valueMapper(t)),
+      finisher: identity,
+    };
+  }
+
+  /**
+   * Collect to a map from entry objects
+   * @returns a collector to map converting a stream of entries into a Map
+   */
+  public static toMapFromEntries<K, V>() {
+    return Collectors.toMap<Entry<K, V>, K, V>(
+      (entry) => entry.key,
+      (entry) => entry.value
+    );
   }
 }

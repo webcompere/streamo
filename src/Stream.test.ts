@@ -6,9 +6,32 @@ import {
   identity,
   reversed,
 } from './functions';
+import Optional from './Optional';
 import Stream from './Stream';
 
 describe('streaming', () => {
+  describe('of vector sources', () => {
+    it('can create from an array', () => {
+      expect(Stream.ofArray(['a', 'b', 'c']).count()).toBe(3);
+    });
+
+    it('can create from varargs', () => {
+      expect(Stream.of('a', 'b', 'c').count()).toBe(3);
+    });
+
+    it('can create from an object', () => {
+      expect(Stream.ofObject({ a: 1, b: 2 }).count()).toBe(2);
+    });
+
+    it('can creat4e from a map', () => {
+      const map = new Map<string, number>();
+      map.set('a', 1);
+      map.set('b', 2);
+
+      expect(Stream.ofMap(map).count()).toBe(2);
+    });
+  });
+
   describe('collect to array', () => {
     it('can collect an array', () => {
       const collected = Stream.ofArray([1, 2, 3]).toArray();
@@ -98,6 +121,25 @@ describe('streaming', () => {
 
       // but the generator wasn't called more than needed
       expect(generator).toHaveBeenCalledTimes(3);
+    });
+  });
+
+  describe('generate', () => {
+    it('can generate indefinitely', () => {
+      expect(
+        Stream.generate(() => 'foo')
+          .limit(100)
+          .count()
+      ).toBe(100);
+    });
+
+    it('can generate finite until the finite source runs out', () => {
+      const some = ['foo', 'bar'];
+      expect(
+        Stream.generateFinite(() => Optional.of(some.pop()))
+          .limit(100)
+          .toArray()
+      ).toEqual(['bar', 'foo']);
     });
   });
 
@@ -510,9 +552,9 @@ describe('streaming', () => {
   });
 
   describe('collection', () => {
-    it('can use toList instead of built in toList', () => {
+    it('can use toArray instead of built in toArray', () => {
       expect(
-        Stream.of('red', 'green', 'blue').collect(Collectors.toList())
+        Stream.of('red', 'green', 'blue').collect(Collectors.toArray())
       ).toEqual(['red', 'green', 'blue']);
     });
   });
