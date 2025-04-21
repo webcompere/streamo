@@ -103,8 +103,8 @@ export default class Stream<T> {
    * @param maxExclusive the number after the last in the range
    * @returns a number stream which has special numeric processing
    */
-  public static ofRange(min: number, maxExclusive: number) {
-    return new NumberStream(new RangeIterable(min, maxExclusive));
+  public static ofRange(min: number, maxExclusive: number, delta?: number) {
+    return new NumberStream(new RangeIterable(min, maxExclusive, delta));
   }
 
   /**
@@ -113,8 +113,14 @@ export default class Stream<T> {
    * @param maxInclusive the last in the range
    * @returns a number stream which has special numeric processing
    */
-  public static ofRangeClosed(min: number, maxInclusive: number) {
-    return new NumberStream(new RangeIterable(min, maxInclusive + 1));
+  public static ofRangeClosed(
+    min: number,
+    maxInclusive: number,
+    delta?: number
+  ) {
+    return new NumberStream(
+      new RangeIterable(min, maxInclusive + (delta ?? 1), delta)
+    );
   }
 
   /**

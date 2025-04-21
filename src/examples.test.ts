@@ -116,9 +116,77 @@ describe('Examples', () => {
         expect(Optional.empty().orElse('bar')).toBe('bar');
       });
 
-      it('uses orElseG  et', () => {
+      it('uses orElseGet', () => {
         expect(Optional.empty().orElseGet(() => 'bar')).toBe('bar');
       });
+    });
+  });
+
+  describe('random stream', () => {
+    it('can use random numbers', () => {
+      expect(
+        Stream.generate(() => Math.random())
+          .limit(10)
+          .count()
+      ).toBe(10);
+    });
+
+    it('can toss coins until it gets heads', () => {
+      expect(
+        Stream.generateFinite(() =>
+          Optional.of(Math.floor(Math.random() * 100)).filter(
+            (coin) => coin % 2 === 0
+          )
+        ).toArray()
+      ).toBeTruthy();
+    });
+  });
+
+  describe('findFirst', () => {
+    it('examples', () => {
+      // no first item on an empty stream
+      expect(Stream.empty().findFirst().isPresent()).toBeFalsy();
+
+      // find first even number
+      expect(
+        Stream.of(1, 2, 3)
+          .findFirst((num) => num % 2 === 0)
+          .get()
+      ).toBe(2);
+
+      // find first number after an even filter
+      expect(
+        Stream.of(1, 2, 3)
+          .filter((num) => num % 2 === 0)
+          .findFirst()
+          .get()
+      ).toBe(2);
+    });
+  });
+
+  describe('ranges', () => {
+    it('produces a bounded range', () => {
+      // specify the limit of a range
+      expect(Stream.ofRange(0, 4).toArray()).toEqual([0, 1, 2, 3]);
+    });
+
+    it('produces a bounded range with half numbers', () => {
+      // specify the limit of a range
+      expect(Stream.ofRange(0, 4, 0.5).toArray()).toEqual([
+        0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5,
+      ]);
+    });
+
+    it('produces a closed range', () => {
+      // or specify the last number
+      expect(Stream.ofRangeClosed(0, 3).toArray()).toEqual([0, 1, 2, 3]);
+    });
+
+    it('produces a close range with half numbers', () => {
+      // specify the limit of a range
+      expect(Stream.ofRangeClosed(0, 3, 0.5).toArray()).toEqual([
+        0, 0.5, 1, 1.5, 2, 2.5, 3,
+      ]);
     });
   });
 
