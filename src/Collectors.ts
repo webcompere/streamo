@@ -81,6 +81,18 @@ export default class Collectors {
   }
 
   /**
+   * Collect a stream of entries into an object the entries must have
+   * a key type of string
+   * @returns a collector that turns the entries back into an object
+   */
+  public static toObjectFromEntries<V>() {
+    return Collectors.toObject<Entry<string, V>, V>(
+      (entry) => entry.key,
+      (entry) => entry.value
+    );
+  }
+
+  /**
    * Collect to a map
    * @param keyMapper map from the item to the key part of the map
    * @param valueMapper map from the item to the value part of the map

@@ -24,6 +24,14 @@ describe('Collectors', () => {
         )
       ).toEqual({ Jim: 46, Bob: 67 });
     });
+
+    it('can collect entries into an object', () => {
+      expect(
+        Stream.ofObject({ a: 1, b: 2 }).collect(
+          Collectors.toObjectFromEntries()
+        )
+      ).toEqual({ a: 1, b: 2 });
+    });
   });
 
   describe('toMap', () => {
