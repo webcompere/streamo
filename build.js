@@ -1,5 +1,5 @@
-const esbuild = require('esbuild');
-const { execSync } = require('child_process');
+import esbuild from 'esbuild';
+import { execSync } from 'child_process';
 
 const sharedConfig = {
   entryPoints: ['src/index.ts'],
