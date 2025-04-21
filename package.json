@@ -24,7 +24,7 @@
     "import": "./build/index.mjs",
     "require": "./build/index.cjs"
   },
-  "types": "./build/types/index.d.ts",
+  "types": "./build/types/src/index.d.ts",
   "author": "Ashley Frieze",
   "license": "MIT",
   "devDependencies": {
