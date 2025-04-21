@@ -7,12 +7,9 @@ on:
     branches: [main]
 
 jobs:
-  build:
+  build-and-publis:
+    if: github.actor != 'github-actions[bot]' # 🛑 avoid infinite loop
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        node-version: [18.x]
 
     steps:
       - name: ⬇️ Checkout code
@@ -21,7 +18,7 @@ jobs:
       - name: 🟢 Use Node.js ${{ matrix.node-version }}
         uses: actions/setup-node@v3
         with:
-          node-version: ${{ matrix.node-version }}
+          node-version: 18
 
       - name: 📦 Install dependencies
         run: npm i -g pnpm
@@ -40,3 +37,12 @@ jobs:
         uses: codecov/test-results-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Bump version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          pnpm version patch
+          git add package.json pnpm-lock.yaml
+          git commit -m "chore: bump version [skip ci]" || echo "No changes to commit"
+          git push
