@@ -6,3 +6,5 @@ export type * from './Collectors';
 export * from './Collectors';
 export * from './Iterables';
 export type * from './Iterables';
+export type * from './Transformers';
+export * from './Transformers';

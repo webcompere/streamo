@@ -23,8 +23,10 @@ import {
   RangeIterable,
   TakeWhileIterable,
   DropWhileIterable,
+  TransformingIterator,
 } from './Iterables';
 import Optional from './Optional';
+import { Transformer } from './Transformers';
 
 export type Indexed<T> = { index: number; value: T };
 
@@ -288,6 +290,16 @@ export default class Stream<T> {
   public dropWhile(predicate: Predicate<T>) {
     return this.substituteIterable(
       new DropWhileIterable(this.iterable, predicate)
+    );
+  }
+
+  /**
+   * Transform from this stream into another
+   * @param transformer the transformer to use
+   */
+  public transform<A, R>(transformer: Transformer<T, A, R>): Stream<R> {
+    return new Stream<R>(
+      new TransformingIterator<T, A, R>(this.getIterable(), transformer)
     );
   }
 

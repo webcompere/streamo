@@ -82,7 +82,6 @@ This project is still incubating. Please feel free to raise issues, but we're no
 
 ## TODO
 
-- gather
 - provide examples and README
 - publish to npm
 

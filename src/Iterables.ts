@@ -1,5 +1,6 @@
 import { Mapper, not, Predicate, Supplier } from './functions';
 import Optional from './Optional';
+import { Transformer } from './Transformers';
 
 export interface Iterable<T> {
   /**
@@ -242,5 +243,50 @@ export class RangeIterable implements Iterable<number> {
 
   getNext(): number {
     return this.current++;
+  }
+}
+
+/**
+ * An iterator which uses a transformer
+ */
+export class TransformingIterator<T, A, R> implements Iterable<R> {
+  private readonly transformer: Transformer<T, A, R>;
+  private readonly source: Iterable<T>;
+  private next: Optional<R> = Optional.empty();
+  private accumulator: A;
+
+  constructor(source: Iterable<T>, transformer: Transformer<T, A, R>) {
+    this.transformer = transformer;
+    this.source = source;
+    this.accumulator = this.transformer.supplier();
+  }
+
+  hasNext(): boolean {
+    this.next = Optional.empty();
+
+    while (this.source.hasNext()) {
+      const transformation = this.transformer.transformer(
+        this.accumulator,
+        this.source.getNext()
+      );
+      if (transformation.value.isPresent()) {
+        if (transformation.clearState) {
+          this.accumulator = this.transformer.supplier();
+        }
+        this.next = transformation.value;
+        return true;
+      }
+    }
+
+    // we ran out of elements so finalise the accumulator
+    this.next = this.transformer.finisher(this.accumulator);
+
+    // and wipe it
+    this.accumulator = this.transformer.supplier();
+    return this.next.isPresent();
+  }
+
+  getNext(): R {
+    return this.next.orElseThrow(() => new Error('No elements remaining'));
   }
 }
