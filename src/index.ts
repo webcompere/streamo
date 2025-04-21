@@ -1,10 +1,14 @@
 export * from './Stream';
+export { default as Stream } from './Stream';
 export type * from './functions';
 export * from './functions';
 export * from './Optional';
+export { default as Optional } from './Optional';
 export type * from './Collectors';
 export * from './Collectors';
+export { default as Collectors } from './Collectors';
 export * from './Iterables';
 export type * from './Iterables';
 export type * from './Transformers';
 export * from './Transformers';
+export { default as Transformers } from './Transformers';
