@@ -2,7 +2,9 @@
   "name": "@webcompere/streamo",
   "version": "1.0.4",
   "description": "A streaming library inspired by Java Streams",
-  "main": "index.ts",
+  "type": "module",
+  "main": "./build/index.cjs",
+  "module": "./build/index.mjs",
   "repository": {
     "type": "git",
     "url": "https://github.com/webcompere/streamo"
