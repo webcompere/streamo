@@ -11,16 +11,15 @@ A TypeScript implementation of collection streaming. Loosely based on Java's Str
 Consider the following code:
 
 ```ts
-const array = [1, 2, 3];
-const doubled = array.map((item) => item * 2);
-const asString = doubled.map((item) => `${item}`);
-const filtered = asString.filter((item) => item !== '6');
-const count = filtered.length;
+const count = [1, 2, 3]
+  .map((item) => item * 2);
+  .map((item) => `${item}`);
+  .filter((item) => item !== '6')
+  .length;
 ```
 
-In this example, we've created 3 additional instances of the array to get to the end result.
-
-With streaming, we can operate over much larger quantities of data, and each `map` or `filter` operation applies on the fly.
+In this example, we've created 3 instances of the array to get to the end result. With a streaming
+operation, we iterate the data through each operation and do not need to create intermediate arrays:
 
 ```ts
 const count = Stream.of(1, 2, 3)
@@ -43,11 +42,345 @@ console.log(firstEvenNumber.orElse('unknown'));
 ```
 
 Here the first even number is `2`. The `findFirst` method returns an `Optional<number>` in this case,
-which contains the `2`. The array is not converted into a full filtered copied of the original by calling the `filter` function
-8 times. Instead, the filter function is called until we find our first even number and then we stop.
+which contains the `2`. Unlike with JavaScript arrays, the array is not converted into a fully filtered
+copy of the original by calling the predicate, provided to `filter` 8 times. Instead, the data is streamed
+until `findFirst` gets its first result.
 
 The `Optional` class, also copied from Java, is a way to represent a value, or the absence of a value, as
 found in a stream.
+
+## Usage
+
+### Overview
+
+- Create a `Stream` from some source data
+- Apply operations like `distinct`, `sorted`, `map` or `filter` to change the data passing through it
+- Use `skip`, `limit`, `takeWhile`, or `dropWhile`, to trim the data available
+- Then use a terminal operation to get a final result, such as `findFirst`, `anyMatch`, `noneMatch`, `count`, `toArray`, `max`, `min`, `reduce`, or `collect`
+
+There's a special subtype of `Stream` for numbers - `NumberStream` which allows a `sum` operator, and some
+useful default comparators for sorting/max/min.
+
+> Note: Streams can only be used once. Once we reach a terminal operation, we cannot
+> call any other functions on the stream.
+
+### Create a Stream
+
+If we have an array, we can use `ofArray`:
+
+```ts
+const myArray = ['a', 'b', 'c'];
+const strings = Stream.ofArray(myArray);
+```
+
+If we have some absolute values we can use `of`:
+
+```ts
+const strings = Stream.of('a', 'b', 'c');
+```
+
+We can construct a stream of `number` using `ofNumbers`:
+
+```ts
+const numbers = Stream.ofNumbers(1, 2, 3);
+```
+
+And if we have a stream of something we want to make into a number stream, we can map
+it to a number stream with `mapToNumber` that converts the items into numbers:
+
+```ts
+const arrayOfStrings = ['1', '2', '3'];
+const numbers = Stream.ofArray(arrayOfStrings).mapToNumber((num) => +num);
+```
+
+which means we can use `NumberStream` methods like `sum`:
+
+```ts
+expect(numbers.sum()).toBe(6);
+```
+
+We can also create a stream of the entries from a `Map` or the key value pairs from an `Object`:
+
+```ts
+const map = new Map<string, string>([
+  ['a', 'b'],
+  ['c', 'd'],
+]);
+
+const streamOfEntries = Stream.ofMap(map);
+```
+
+which will allow us to filter the key value pairs, or collect them into an object:
+
+```ts
+expect(streamOfEntries.collect(Collectors.toObjectFromEntries())).toEqual({
+  a: 'b',
+  c: 'd',
+});
+```
+
+If we need to provide an empty stream, then `Stream.empty()` will do so.
+
+### Familiar Operations from Array
+
+Functions like `map`, `filter` and `reduce` are familiar from `Array`.
+
+```ts
+const filtered = Stream.of('a', 'b', 'cc', 'd')
+  .filter((item) => item.length === 1)
+  .toArray(); // a, b, d
+```
+
+> Note: if we're just doing a single operation and then converting back to array, then there's
+> no advantage of using `Stream`. The runtime advantages of stream take effect with multiple operations
+> and the ability to compose functions to route just enough data from a producer to a consumer
+
+We can also use `map`:
+
+```ts
+const mapped = Stream.of({ name: 'Bill' }, { name: 'Bob' })
+  .map((item) => item.name)
+  .toArray(); // Bill, Bob
+```
+
+For reduce we have two options. We can reduce using a single binary operator:
+
+```ts
+const reduced = Stream.of('A', 'B', 'C').reduce((a, b) => a + b); // Optional.of('ABC')
+
+// get the value from the optional
+expect(reduced.get()).toBe('ABC');
+```
+
+When reducing with a binary operator, there's a chance that the stream is empty, so the result is wrapped
+in an `Optional`. If we use `reduceFrom` where we supply an initial value, then even if the stream
+is empty, there's a guaranteed value.
+
+```ts
+const reduced = Stream.of('A', 'B', 'C').reduceFrom(
+  '',
+  (a, b) => a + b,
+  identity
+);
+expect(reduced).toBe('ABC');
+```
+
+The `reduceFrom` function takes three inputs:
+
+- `initialValue` - the starting value
+- `accumulator` - a binary operation which takes the accumulator and the next value and adds them together to make the new accumulator
+- `converter` - a function which converts from element values to the type of the accumulator
+
+In the above example, we're accumulating in the same type as the element type - `string` - so we can use the convenience function `identity` with the `reduceFrom` function.
+
+### Value Modifying Functions
+
+We can use `indexed` to provide a position value next to each value in the stream.
+
+We can add a transformer to the middle of a stream to modify the contents of the stream in a stateful way.
+
+### Searching Functions
+
+We can stop iteration at the first available value with `findFirst`.
+
+We can check if any items match a predicte using `anyMatch`.
+
+We can check if no items match a predicate using `noneMatch`.
+
+We can check if all items match a preciate using `allMatch`.
+
+### Terminating Functions
+
+The `toArray` function will collect the items into an array.
+
+The `toMap` function will collect the items into a `Map`.
+
+The `collect` function uses a `Collector` to produce a final value from the contents of the Stream.
+
+### Length Functions
+
+We can use `skip` to ignore some items.
+
+We can use `limit` to stop the stream after it has provided so many values - this is useful when we're using
+infinite generators.
+
+We can use `takeWhile` to keep reading from the stream until a predicate stops being true.
+
+We can use `dropWhile` to skip items in the stream until a predicate stops being true.
+
+### Generators
+
+A stream does not have to come from a finite data source. We can use generators.
+
+The simplest generator is a `Supplier`.
+
+## Optional
+
+The equivalent Java `Optional` class is a first class citizen in this library. Optional is a special
+collection of 0 or 1 items. We can convert it into a `Stream` with its `stream` function. We can
+check it for presence and absence of its element with `isEmpty` and we can perform `filter` and
+`map` functions on it, which will transform the element present, or cause it to become not present.
+
+In `Optional`, the only value for missing is `undefined`. If the type field of the `Optional` allows
+`null` to exist, then there's a special `filterNotNull` that will take `null` out of the type of the
+`Optional`.
+
+> Note: Optional is provided as a reflection of the original Java API from which Streamo is ported
+> but has also been a useful tool in implementing Streamo.
+
+### Creating an Optional
+
+We can create an `Optional` using `of`:
+
+```ts
+const optional = Optional.of('foo');
+```
+
+and we can create an empty `Optional`:
+
+```ts
+const emptyOptional = Optional.empty();
+```
+
+If we need to make this a typed optional, e.g. an empty string optional:
+
+```ts
+const emptyString = Optional.empty<string>();
+```
+
+### Creating from Alternatives - Coalescing
+
+Optional can replace the `??` coalesce operator in typescript. Let's look at the comparison:
+
+```ts
+const a = 'a';
+const b = undefined;
+const c = undefined;
+
+const coalesceTs = a ?? b ?? c;
+expect(coalesceTs).toBe('a');
+```
+
+The same coalesce can be done using `Optional.of`:
+
+```ts
+const optionalCoalesce = Optional.of(a, b, c).get();
+```
+
+With variables, this is fine, but the short-circuiting of `??` would be better than passing all values
+to `Optional.of` when we're calling functions to find alternatives. So:
+
+```ts
+const coalesceTs = fnA() ?? fnB() ?? fnC(123);
+```
+
+should be converted to:
+
+```ts
+const optionalCoalesce = Optional.ofSupplier(fnA, fnB, () => fnC(123));
+```
+
+The only advantage of using `Optional` over `??` for coalescing is that `.orElse` is a clearer way
+to demonstrate that we're providing a guaranteed fallback value.
+
+E.g.
+
+```ts
+const optionalCoalesce = Optional.ofSupplier(fnA, fnB).orElse(12);
+```
+
+The benefits of `Optional` as a fluent interface over a potentially absent element can be achieved
+after coalescing with `??` or in place of it.
+
+The `or` function can be used to bring together multiple suppliers of `Optional` until the first present one:
+
+```ts
+const optional = Optional.ofSupplier(fnA, fnB).or(fnC, fnD);
+```
+
+### Filtering
+
+If the `Optional` has a value, then the `filter` will apply the predicate to it, and produce a new
+`Optional` with the value removed if the predicate wasn't achieved:
+
+```ts
+// filtering on string of length 1 blanks out our input
+expect(
+  Optional.of('foo')
+    .filter((st) => st.length === 1)
+    .isPresent()
+).toBeFalsy();
+```
+
+### Map and FlatMap
+
+We can map the `Optional` to another value:
+
+```ts
+expect(
+  Optional.of('foo')
+    .map((opt) => `${opt}!`)
+    .get()
+).toBe('foo!');
+```
+
+If the mapping function itself returns an Optional, we can flatten that by using `flatMap`:
+
+```ts
+expect(
+  Optional.of('foo')
+    .flatMap((opt) => Optional.of(`${opt}!`))
+    .get()
+).toBe('foo!');
+```
+
+### Getting the Result
+
+`isEmpty` and `isPresent` will tell us if the result is available.
+
+The `get` function will retrieve the value, but can also return `undefined`. To guarantee a value of type
+`T`, then we need to use `orElse`:
+
+```ts
+expect(Optional.of('foo').orElse('bar')).toBe('foo');
+```
+
+If the optional is blank, the value provided in `orElse` will be returned:
+
+```ts
+expect(Optional.empty().orElse('bar')).toBe('bar');
+```
+
+If there's effort in producing the value for else, we use `orElseGet` to invoke a function
+to produce the result:
+
+```ts
+expect(Optional.empty().orElseGet(() => 'bar')).toBe('bar');
+```
+
+If not having a value is an error then we can use `orElseThrow`:
+
+```ts
+const nextItem = optionalValue.orElseThrow();
+const lastItem = optionalValue.orElseThrow(
+  () => new Error('How did this happen?')
+);
+```
+
+If we want to do something with the value when present, we can use `ifPresent`:
+
+```ts
+Optional.of('foo').ifPresent((item) => console.log(item));
+```
+
+And this can replace `if`/`else` entirely using `ifPresentOrElse`:
+
+```ts
+Optional.of('foo').ifPresentOrElse(
+  (item) => console.log(item),
+  () => console.log('none')
+);
+```
 
 ## Build
 
@@ -78,7 +411,6 @@ pnpm lint:fix
 ## Contributing
 
 This project is still incubating. Please feel free to raise issues, but we're not taking PRs at this time.
-
 
 ## TODO
 

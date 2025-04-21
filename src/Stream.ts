@@ -1,4 +1,4 @@
-import { Collector, collect } from './Collectors';
+import { Collector, Entry, collect } from './Collectors';
 import {
   alwaysTrue,
   BinaryOperator,
@@ -68,10 +68,15 @@ export default class Stream<T> {
    * @param map the map to read
    * @returns a stream of {@link Entry} objects
    */
-  public static ofMap<K, V>(map: Map<K, V>) {
+  public static ofMap<K, V>(map: Map<K, V>): Stream<Entry<K, V>> {
     const iterator = map.entries();
 
-    return Stream.generateFinite(() => Optional.of(iterator.next().value));
+    return Stream.generateFinite(() =>
+      Optional.of(iterator.next().value).map(([key, value]) => ({
+        key,
+        value,
+      }))
+    );
   }
 
   /**
