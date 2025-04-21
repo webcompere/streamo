@@ -23,6 +23,8 @@ In this example, we've created 3 instances of the array to get to the end result
 operation, we iterate the data through each operation and do not need to create intermediate arrays:
 
 ```ts
+import { Stream } from '@webcompere/streamo';
+
 const count = Stream.of(1, 2, 3)
   .map((item) => item * 2)
   .map((item) => `${item}`)
