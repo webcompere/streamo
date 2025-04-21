@@ -7,7 +7,7 @@ on:
     branches: [main]
 
 jobs:
-  build-and-publis:
+  build-and-publish:
     if: github.actor != 'github-actions[bot]' # 🛑 avoid infinite loop
     runs-on: ubuntu-latest
 
