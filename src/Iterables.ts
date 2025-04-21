@@ -231,10 +231,12 @@ export class FlatteningIterable<T> implements Iterable<T> {
 export class RangeIterable implements Iterable<number> {
   private current;
   private readonly maxExclusive: number;
+  private readonly delta: number;
 
-  constructor(min: number, maxExclusive: number) {
+  constructor(min: number, maxExclusive: number, delta = 1) {
     this.current = min;
     this.maxExclusive = maxExclusive;
+    this.delta = delta;
   }
 
   hasNext(): boolean {
@@ -242,7 +244,9 @@ export class RangeIterable implements Iterable<number> {
   }
 
   getNext(): number {
-    return this.current++;
+    const next = this.current;
+    this.current += this.delta;
+    return next;
   }
 }
 

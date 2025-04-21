@@ -170,6 +170,13 @@ export default class Collectors {
     };
   }
 
+  /**
+   * Create a collector to perform collection with another collector and perform
+   * a final transform after
+   * @param collector the base collector to use
+   * @param finisher a mapping function to convert to another form
+   * @returns a collector
+   */
   public static collectingAndThen<T, A, R, RR>(
     collector: Collector<T, A, R>,
     finisher: Mapper<R, RR>

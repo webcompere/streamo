@@ -1,4 +1,3 @@
-import { identity } from './functions';
 import Optional from './Optional';
 
 /**
@@ -30,20 +29,22 @@ export interface Transformer<T, A, R> {
   finisher: (a: A) => Optional<R>;
 }
 
-/**
- * A batching transformer - converts the stream into array of the batch size
- * @param size the size of each batch
- */
-export const batch = <T>(size: number): Transformer<T, T[], T[]> => {
-  return {
-    supplier: () => [],
-    transformer: (a, t) => {
-      a.push(t);
-      if (a.length >= size) {
-        return { clearState: true, value: Optional.of(a) };
-      }
-      return { value: Optional.empty() };
-    },
-    finisher: (a) => Optional.of(a).filter((a) => a.length > 0),
-  };
-};
+export default class Transformers {
+  /**
+   * A batching transformer - converts the stream into array of the batch size
+   * @param size the size of each batch
+   */
+  public static batch<T>(size: number): Transformer<T, T[], T[]> {
+    return {
+      supplier: () => [],
+      transformer: (a, t) => {
+        a.push(t);
+        if (a.length >= size) {
+          return { clearState: true, value: Optional.of(a) };
+        }
+        return { value: Optional.empty() };
+      },
+      finisher: (a) => Optional.of(a).filter((a) => a.length > 0),
+    };
+  }
+}

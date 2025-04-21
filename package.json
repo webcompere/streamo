@@ -3,6 +3,10 @@
   "version": "1.0.3",
   "description": "A streaming library inspired by Java Streams",
   "main": "index.ts",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/webcompere/streamo"
+  },
   "scripts": {
     "ci": "pnpm lint && pnpm build && pnpm test",
     "build": "node build.js",
