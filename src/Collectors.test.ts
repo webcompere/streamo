@@ -70,4 +70,36 @@ describe('Collectors', () => {
       );
     });
   });
+
+  describe('joining', () => {
+    it('will join a sequence of strings with no parameters', () => {
+      expect(Stream.of('a', 'b', 'c').collect(Collectors.joining())).toBe(
+        'abc'
+      );
+    });
+
+    it('will join a sequence of strings with delimiter', () => {
+      expect(Stream.of('a', 'b', 'c').collect(Collectors.joining(','))).toBe(
+        'a,b,c'
+      );
+    });
+
+    it('will join a sequence of strings with delimiter and prefix', () => {
+      expect(
+        Stream.of('a', 'b', 'c').collect(Collectors.joining(',', '('))
+      ).toBe('(a,b,c');
+    });
+
+    it('will join a sequence of strings with delimiter, prefix, suffix', () => {
+      expect(
+        Stream.of('a', 'b', 'c').collect(Collectors.joining(',', '(', ')'))
+      ).toBe('(a,b,c)');
+    });
+
+    it('will join an empty of strings with delimiter, prefix, suffix', () => {
+      expect(
+        Stream.empty<string>().collect(Collectors.joining(',', '(', ')'))
+      ).toBe('()');
+    });
+  });
 });

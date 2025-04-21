@@ -141,4 +141,31 @@ export default class Collectors {
       },
     };
   }
+
+  /**
+   * Create a joining collector assuming a stream of strings
+   * @param delimiter the delimiter between items
+   * @param prefix the prefix before the whole join
+   * @param suffix the suffix of the join
+   * @returns a collector which builds a string joining the items together
+   */
+  public static joining(
+    delimiter = '',
+    prefix = '',
+    suffix = ''
+  ): Collector<string, void, string> {
+    let result = prefix;
+    let first = true;
+    return {
+      supplier: () => ({}),
+      accumulator: (a, b) => {
+        if (!first) {
+          result = result + delimiter;
+        }
+        first = false;
+        result = result + b;
+      },
+      finisher: () => result + suffix,
+    };
+  }
 }
