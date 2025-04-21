@@ -11,6 +11,9 @@
     "lint": "prettier -c src",
     "lint:fix": "prettier -w src"
   },
+  "files": [
+    "./build"
+  ],
   "exports": {
     "import": "./build/index.mjs",
     "require": "./build/index.cjs"
