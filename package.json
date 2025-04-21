@@ -1,5 +1,5 @@
 {
-  "name": "streamo",
+  "name": "@webcompere/streamo",
   "version": "1.0.0",
   "description": "A streaming library inspired by Java Streams",
   "main": "index.ts",
