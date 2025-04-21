@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
+          registry-url: 'https://registry.npmjs.org/'
 
       - name: 📦 Install dependencies
         run: npm i -g pnpm
@@ -39,6 +40,7 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
 
       - name: Bump version
+        if: github.ref == 'refs/heads/main'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
@@ -46,3 +48,10 @@ jobs:
           git add package.json pnpm-lock.yaml
           git commit -m "chore: bump version [skip ci]" || echo "No changes to commit"
           git push
+          git push --tags
+      
+      - name: Publish to npm
+        if: github.ref == 'refs/heads/main'
+        run: pnpm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
