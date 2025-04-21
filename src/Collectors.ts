@@ -1,5 +1,6 @@
-import { identity, Mapper, Supplier } from './functions';
+import { Comparator, identity, Mapper, reversed, Supplier } from './functions';
 import { Iterable } from './Iterables';
+import Optional from './Optional';
 
 /**
  * A collector is an object that collects into a final object of type R - the reduced
@@ -177,6 +178,37 @@ export default class Collectors {
       supplier: collector.supplier,
       accumulator: collector.accumulator,
       finisher: (a) => finisher(collector.finisher(a)),
+    };
+  }
+
+  /**
+   * Collect to the minimum value if there is one
+   * @param the comparator which expresses ascending order
+   * @returns a collector which will yield the minimum in an optional
+   */
+  public static minBy<T>(comparator: Comparator<T>) {
+    return Collectors.maxBy(reversed(comparator));
+  }
+
+  /**
+   * Collect to the maximum value if there is one
+   * @param comparator the comparator which expresses ascending order
+   * @returns a collector which will yield the maximum in an optional
+   */
+  public static maxBy<T>(
+    comparator: Comparator<T>
+  ): Collector<T, void, Optional<T>> {
+    let max: T | undefined = undefined;
+    let first = true;
+    return {
+      supplier: () => ({}),
+      accumulator: (a, b) => {
+        if (first || comparator(max!, b) < 0) {
+          max = b;
+        }
+        first = false;
+      },
+      finisher: () => Optional.of(max),
     };
   }
 }

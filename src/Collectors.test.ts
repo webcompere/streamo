@@ -1,4 +1,5 @@
 import Collectors, { collect } from './Collectors';
+import { compareString, comparingBy } from './functions';
 import { ArrayIterable } from './Iterables';
 import Stream from './Stream';
 
@@ -113,6 +114,42 @@ describe('Collectors', () => {
           )
         )
       ).toBe(7);
+    });
+  });
+
+  describe('min and max by', () => {
+    it('can find the largest item', () => {
+      expect(
+        Stream.of('red', 'green', 'blue')
+          .collect(Collectors.maxBy(compareString))
+          .get()
+      ).toBe('red');
+    });
+
+    it('can find the smallest item', () => {
+      expect(
+        Stream.of('red', 'green', 'blue')
+          .collect(Collectors.minBy(compareString))
+          .get()
+      ).toBe('blue');
+    });
+
+    it('can find the smallest item using comparingBy', () => {
+      expect(
+        Stream.of({ colour: 'red' }, { colour: 'green' }, { colour: 'blue' })
+          .collect(
+            Collectors.minBy(comparingBy((item) => item.colour, compareString))
+          )
+          .get()
+      ).toEqual({ colour: 'blue' });
+    });
+
+    it('will return empty if no items', () => {
+      expect(
+        Stream.empty<string>()
+          .collect(Collectors.minBy(compareString))
+          .isPresent()
+      ).toBeFalsy();
     });
   });
 });

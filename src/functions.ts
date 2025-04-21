@@ -90,3 +90,15 @@ export const compareNumbers: Comparator<number> = (a, b) => a - b;
  * @returns a comparator that uses `localeCompare`
  */
 export const compareString: Comparator<string> = (a, b) => a.localeCompare(b);
+
+/**
+ * Create a Comparator<T> from a Comparator<R> - for example to allow us to compare objects
+ * using a comparator based on a field of the object.
+ * @param mapper convert from the T type to the R type
+ * @param comparator comparer of the Rs
+ * @returns a comparator of Ts
+ */
+export const comparingBy =
+  <T, R>(mapper: Mapper<T, R>, comparator: Comparator<R>) =>
+  (a: T, b: T) =>
+    comparator(mapper(a), mapper(b));
