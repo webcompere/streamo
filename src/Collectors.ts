@@ -125,20 +125,22 @@ export default class Collectors {
    * Collect to an average
    * @returns a collector which produces an average of the input or NaN if none
    */
-  public static averaging(): Collector<number, void, number> {
-    let count = 0;
-    let sum = 0;
+  public static averaging(): Collector<
+    number,
+    { count: number; sum: number },
+    number
+  > {
     return {
-      supplier: () => ({}),
+      supplier: () => ({ count: 0, sum: 0 }),
       accumulator: (a, b) => {
-        sum += b;
-        count++;
+        a.sum += b;
+        a.count++;
       },
       finisher: (a) => {
-        if (count === 0) {
+        if (a.count === 0) {
           return Number.NaN;
         }
-        return sum / count;
+        return a.sum / a.count;
       },
     };
   }
@@ -154,19 +156,17 @@ export default class Collectors {
     delimiter = '',
     prefix = '',
     suffix = ''
-  ): Collector<string, void, string> {
-    let result = prefix;
-    let first = true;
+  ): Collector<string, { result: string; first: boolean }, string> {
     return {
-      supplier: () => ({}),
+      supplier: () => ({ result: prefix, first: true }),
       accumulator: (a, b) => {
-        if (!first) {
-          result = result + delimiter;
+        if (!a.first) {
+          a.result += delimiter;
         }
-        first = false;
-        result = result + b;
+        a.first = false;
+        a.result += b;
       },
-      finisher: () => result + suffix,
+      finisher: (a) => a.result + suffix,
     };
   }
 
@@ -197,18 +197,54 @@ export default class Collectors {
    */
   public static maxBy<T>(
     comparator: Comparator<T>
-  ): Collector<T, void, Optional<T>> {
-    let max: T | undefined = undefined;
-    let first = true;
+  ): Collector<T, { max: T | undefined; first: boolean }, Optional<T>> {
     return {
-      supplier: () => ({}),
+      supplier: () => ({ max: undefined, first: true }),
       accumulator: (a, b) => {
-        if (first || comparator(max!, b) < 0) {
-          max = b;
+        if (a.first || comparator(a.max!, b) < 0) {
+          a.max = b;
         }
-        first = false;
+        a.first = false;
       },
-      finisher: () => Optional.of(max),
+      finisher: (a) => Optional.of(a.max),
+    };
+  }
+
+  /**
+   * Collect to a map of identity key vs the array of values matching
+   * @param mapToIdentity function to work out the key identity of each item
+   * @returns a collector which collects to a Map of identity to an array of the items within
+   */
+  public static groupingByToArray<T, K>(mapToIdentity: Mapper<T, K>) {
+    return this.groupingBy(mapToIdentity, Collectors.toArray());
+  }
+
+  /**
+   * Collect to a map of identity key vs a collection defined by the collector
+   * @param mapToIdentity function to work out the key identity of each item
+   * @param groupCollector a child collector, which puts the items into whichever shape is needed
+   * @returns a collector which collects to a Map of identity to the child collector's collection
+   */
+  public static groupingBy<T, K, A, R>(
+    mapToIdentity: Mapper<T, K>,
+    groupCollector: Collector<T, A, R>
+  ): Collector<T, Map<K, A>, Map<K, R>> {
+    return {
+      supplier: () => new Map<K, A>(),
+      accumulator: (a, b) => {
+        const key = mapToIdentity(b);
+        if (!a.has(key)) {
+          a.set(key, groupCollector.supplier());
+        }
+        groupCollector.accumulator(a.get(key)!, b);
+      },
+      finisher: (a) => {
+        const finished = new Map<K, R>();
+        for (const entry of a.entries()) {
+          finished.set(entry[0], groupCollector.finisher(entry[1]));
+        }
+        return finished;
+      },
     };
   }
 }

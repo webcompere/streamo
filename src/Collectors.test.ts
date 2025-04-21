@@ -1,5 +1,10 @@
 import Collectors, { collect } from './Collectors';
-import { compareString, comparingBy } from './functions';
+import {
+  compareNumbers,
+  compareString,
+  comparingBy,
+  identity,
+} from './functions';
 import { ArrayIterable } from './Iterables';
 import Stream from './Stream';
 
@@ -150,6 +155,71 @@ describe('Collectors', () => {
           .collect(Collectors.minBy(compareString))
           .isPresent()
       ).toBeFalsy();
+    });
+  });
+
+  describe('grouping by', () => {
+    it('can group elements together', () => {
+      const expectedMap = new Map<string, string[]>();
+      expectedMap.set('a', ['a']);
+      expectedMap.set('b', ['b']);
+
+      expect(
+        Stream.of('a', 'b').collect(Collectors.groupingByToArray(identity))
+      ).toEqual(expectedMap);
+    });
+
+    it('can group multiple elements together', () => {
+      const expectedMap = new Map<string, string[]>();
+      expectedMap.set('a', ['a', 'a']);
+      expectedMap.set('b', ['b']);
+
+      expect(
+        Stream.of('a', 'a', 'b').collect(Collectors.groupingByToArray(identity))
+      ).toEqual(expectedMap);
+    });
+
+    it('produces empty map with no elements', () => {
+      const expectedMap = new Map<string, string[]>();
+
+      expect(
+        Stream.empty<string>().collect(Collectors.groupingByToArray(identity))
+      ).toEqual(expectedMap);
+    });
+
+    it('can group elements together by property', () => {
+      const expectedMap = new Map<string, { name: string }[]>();
+      expectedMap.set('a', [{ name: 'a' }]);
+      expectedMap.set('b', [{ name: 'b' }]);
+
+      expect(
+        Stream.of({ name: 'a' }, { name: 'b' }).collect(
+          Collectors.groupingByToArray((item) => item.name)
+        )
+      ).toEqual(expectedMap);
+    });
+
+    it('can summarise items', () => {
+      const expectedMap = new Map<string, number>();
+      expectedMap.set('men', 42);
+      expectedMap.set('women', 44);
+
+      expect(
+        Stream.of(
+          { gender: 'men', age: 40 },
+          { gender: 'men', age: 42 },
+          { gender: 'women', age: 44 },
+          { gender: 'women', age: 12 }
+        ).collect(
+          Collectors.groupingBy(
+            (item) => item.gender,
+            Collectors.collectingAndThen(
+              Collectors.maxBy(comparingBy((item) => item.age, compareNumbers)),
+              (optional) => optional.map((item) => item.age).orElse(0)
+            )
+          )
+        )
+      ).toEqual(expectedMap);
     });
   });
 });
