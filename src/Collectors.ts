@@ -119,4 +119,26 @@ export default class Collectors {
       (entry) => entry.value
     );
   }
+
+  /**
+   * Collect to an average
+   * @returns a collector which produces an average of the input or NaN if none
+   */
+  public static averaging(): Collector<number, void, number> {
+    let count = 0;
+    let sum = 0;
+    return {
+      supplier: () => ({}),
+      accumulator: (a, b) => {
+        sum += b;
+        count++;
+      },
+      finisher: (a) => {
+        if (count === 0) {
+          return Number.NaN;
+        }
+        return sum / count;
+      },
+    };
+  }
 }

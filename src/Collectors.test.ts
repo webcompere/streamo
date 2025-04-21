@@ -58,4 +58,16 @@ describe('Collectors', () => {
       ).toEqual(expectedMap);
     });
   });
+
+  describe('average', () => {
+    it('will calculate the average of some numbers', () => {
+      expect(Stream.ofNumbers(1, 2, 3).collect(Collectors.averaging())).toBe(2);
+    });
+
+    it('cannot calculate an average of nothing', () => {
+      expect(Stream.empty<number>().collect(Collectors.averaging())).toBe(
+        Number.NaN
+      );
+    });
+  });
 });

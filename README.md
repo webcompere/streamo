@@ -83,7 +83,6 @@ This project is still incubating. Please feel free to raise issues, but we're no
 ## TODO
 
 - collectors
-  - averaging
   - collecting and then
   - groupingBy
   - joining - delimiter, prefix, suffix
