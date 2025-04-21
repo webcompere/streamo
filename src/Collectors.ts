@@ -168,4 +168,15 @@ export default class Collectors {
       finisher: () => result + suffix,
     };
   }
+
+  public static collectingAndThen<T, A, R, RR>(
+    collector: Collector<T, A, R>,
+    finisher: Mapper<R, RR>
+  ): Collector<T, A, RR> {
+    return {
+      supplier: collector.supplier,
+      accumulator: collector.accumulator,
+      finisher: (a) => finisher(collector.finisher(a)),
+    };
+  }
 }

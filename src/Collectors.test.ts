@@ -102,4 +102,17 @@ describe('Collectors', () => {
       ).toBe('()');
     });
   });
+
+  describe('collecting and then', () => {
+    it('will apply a finishing function after a collector', () => {
+      expect(
+        Stream.of('a', 'b', 'c').collect(
+          Collectors.collectingAndThen(
+            Collectors.joining(',', '(', ')'),
+            (s) => s.length
+          )
+        )
+      ).toBe(7);
+    });
+  });
 });
