@@ -1,7 +1,7 @@
 # Streamo
 
 ![TypeScript](https://img.shields.io/badge/typescript-%23007ACC.svg?logo=typescript&logoColor=white)
-![npm](https://img.shields.io/npm/v/%40webcompere%2Fstreamo)
+[![npm](https://img.shields.io/npm/v/%40webcompere%2Fstreamo)](https://www.npmjs.com/package/@webcompere/streamo)
 ![Build](https://github.com/webcompere/streamo/actions/workflows/build.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/webcompere/streamo/graph/badge.svg?token=tDhFT9GVCf)](https://codecov.io/gh/webcompere/streamo)
 
