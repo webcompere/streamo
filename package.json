@@ -1,6 +1,6 @@
 {
   "name": "@webcompere/streamo",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A streaming library inspired by Java Streams",
   "main": "index.ts",
   "scripts": {
