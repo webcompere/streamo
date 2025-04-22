@@ -12,3 +12,5 @@ export type * from './Iterables';
 export type * from './Transformers';
 export * from './Transformers';
 export { default as Transformers } from './Transformers';
+export { default as AsyncOptional } from './AsyncOptional';
+export * from './async';

@@ -1,4 +1,5 @@
 import { AsyncMapper, AsyncPredicate } from './async';
+import AsyncOptional from './AsyncOptional';
 import {
   Callable,
   Consumer,
@@ -85,6 +86,14 @@ export default class Optional<T> {
    */
   public get(): T | undefined {
     return this.contents;
+  }
+
+  /**
+   * Convert into an async optional
+   * @returns an {@link AsyncOptional} with our value
+   */
+  public async(): AsyncOptional<T> {
+    return AsyncOptional.of(this);
   }
 
   /**
