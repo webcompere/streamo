@@ -7,6 +7,8 @@ import {
   PromiseOrValue,
   toPromise,
 } from './async';
+import { AsyncIterable } from './AsyncIterables';
+import AsyncStream from './AsyncStream';
 import {
   Callable,
   Consumer,
@@ -44,6 +46,19 @@ export default class AsyncOptional<T> {
     // coerce to a promise and then make it a promise of an optional
     return new AsyncOptional<T>(
       toPromise(value).then((val) => Optional.of(val))
+    );
+  }
+
+  /**
+   * Convert a promise of an async optional ino an async optional
+   * @param promisedAsyncOptional flatten a promised async optional into an async optional
+   * @returns an async optional
+   */
+  public static flattenPromise<T>(
+    promisedAsyncOptional: Promise<AsyncOptional<T>>
+  ): AsyncOptional<T> {
+    return new AsyncOptional<T>(
+      promisedAsyncOptional.then((promised) => promised.toOptional())
     );
   }
 
@@ -106,7 +121,7 @@ export default class AsyncOptional<T> {
   public map<R>(
     mapper: AsyncMapper<T, R | undefined> | Mapper<T, R | undefined>
   ) {
-    return new AsyncOptional<T>(
+    return new AsyncOptional<R>(
       this.optionalPromise.then((optional) => optional.mapAsync(mapper))
     );
   }
@@ -180,5 +195,24 @@ export default class AsyncOptional<T> {
     } else {
       await doAction();
     }
+  }
+
+  /**
+   * Convert to a stream of 0 or 1 items
+   */
+  public stream(): AsyncStream<T> {
+    let done = false;
+    const iterator: AsyncIterable<T> = {
+      next: async () => {
+        // only return this item once
+        if (done) {
+          return AsyncOptional.empty();
+        }
+        done = true;
+        return this;
+      },
+      stop: noop,
+    };
+    return new AsyncStream<T>(iterator);
   }
 }

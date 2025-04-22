@@ -213,6 +213,10 @@ describe('streaming', () => {
     it('will match all', () => {
       expect(Stream.of(1, 2, 3).allMatch((item) => item < 20)).toBeTruthy();
     });
+
+    it('will match all on empty', () => {
+      expect(Stream.empty<number>().allMatch((item) => item < 20)).toBeTruthy();
+    });
   });
 
   describe('for each', () => {
@@ -556,6 +560,12 @@ describe('streaming', () => {
       expect(
         Stream.of('red', 'green', 'blue').collect(Collectors.toArray())
       ).toEqual(['red', 'green', 'blue']);
+    });
+  });
+
+  describe('to async', () => {
+    it('can be converted to an async stream', async () => {
+      expect(await Stream.of(1, 2, 3).async().toArray()).toEqual([1, 2, 3]);
     });
   });
 

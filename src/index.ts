@@ -1,3 +1,5 @@
+import AsyncStream from './AsyncStream';
+
 export * from './Stream';
 export { default as Stream } from './Stream';
 export type * from './functions';
@@ -14,3 +16,6 @@ export * from './Transformers';
 export { default as Transformers } from './Transformers';
 export { default as AsyncOptional } from './AsyncOptional';
 export * from './async';
+export type * from './async';
+export { default as AsyncStream } from './AsyncStream';
+export * from './AsyncIterables';

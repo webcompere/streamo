@@ -166,4 +166,20 @@ describe('AsyncOptional', () => {
       expect(orElse).not.toHaveBeenCalled();
     });
   });
+
+  describe('to stream', () => {
+    it('converts an empty optional to an empty stream', async () => {
+      expect(await AsyncOptional.empty().stream().count()).toBe(0);
+    });
+
+    it('converts an valued optional to a stream of one', async () => {
+      expect(await AsyncOptional.of('foo').stream().findFirst().get()).toBe(
+        'foo'
+      );
+    });
+
+    it('converts an valued optional to a stream of one when we read the whole thing', async () => {
+      expect(await AsyncOptional.of('foo').stream().toArray()).toEqual(['foo']);
+    });
+  });
 });
