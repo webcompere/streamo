@@ -691,6 +691,15 @@ Optional.of('foo').ifPresentOrElse(
 );
 ```
 
+## Async Support
+
+> Note: this is incubating
+
+### Optional
+
+Optional supports `mapAsync`, `flatMapAsync` and `filterAsync` which take either a synchronous or
+`async` version of the `Mapper` or `Predicate` and return a `Promise` of an `Optional`.
+
 #### See Also
 
 - [README Example code in Unit Tests](./src/examples.test.ts)

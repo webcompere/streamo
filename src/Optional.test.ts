@@ -1,3 +1,5 @@
+import { sleep } from './async';
+import { alwaysTrue } from './functions';
 import Optional from './Optional';
 
 describe('Optional', () => {
@@ -253,6 +255,103 @@ describe('Optional', () => {
           )
           .get()
       ).toBe('bar');
+    });
+  });
+
+  describe('async filter', () => {
+    it('resolves empty to empty', async () => {
+      const optional = await Optional.empty().filterAsync(async () => true);
+      expect(optional.isEmpty()).toBeTruthy();
+    });
+
+    it('resolves empty to empty with synchronous function', async () => {
+      const optional = await Optional.empty().filterAsync(alwaysTrue);
+      expect(optional.isEmpty()).toBeTruthy();
+    });
+
+    it('resolves value against async filter', async () => {
+      const optional = await Optional.of('foo').filterAsync(async (val) => {
+        await sleep(1);
+        return val === 'foo';
+      });
+      expect(optional.isEmpty()).toBeFalsy();
+    });
+
+    it('resolves negative against async filter', async () => {
+      const optional = await Optional.of('bar').filterAsync(async (val) => {
+        await sleep(1);
+        return val === 'foo';
+      });
+      expect(optional.isEmpty()).toBeTruthy();
+    });
+
+    it('resolves negative against sync filter', async () => {
+      const optional = await Optional.of('bar').filterAsync((val) => {
+        return val === 'foo';
+      });
+      expect(optional.isEmpty()).toBeTruthy();
+    });
+  });
+
+  describe('map async', () => {
+    it('will perform an async map on empty', async () => {
+      expect(
+        (
+          await Optional.empty().mapAsync(async (val) => {
+            await sleep(1);
+            return val + '!';
+          })
+        ).isEmpty()
+      ).toBeTruthy();
+    });
+
+    it('will perform an async map on a value', async () => {
+      expect(
+        (
+          await Optional.of('foo').mapAsync(async (val) => {
+            await sleep(1);
+            return val + '!';
+          })
+        ).get()
+      ).toBe('foo!');
+    });
+
+    it('will perform a synchronous map on a value', async () => {
+      expect(
+        (
+          await Optional.of('foo').mapAsync((val) => {
+            return val + '!';
+          })
+        ).get()
+      ).toBe('foo!');
+    });
+  });
+
+  describe('flatmap async', () => {
+    it('allows a flat map operation on empty to be async', async () => {
+      const optional = await Optional.empty().flatMapAsync(async () => {
+        await sleep(1);
+        return Optional.of('bar');
+      });
+
+      expect(optional.isPresent()).toBeFalsy();
+    });
+
+    it('allows a flat map operation to be async', async () => {
+      const optional = await Optional.of('foo').flatMapAsync(async () => {
+        await sleep(1);
+        return Optional.of('bar');
+      });
+
+      expect(optional.get()).toBe('bar');
+    });
+
+    it('allows a flat map operation to be sync', async () => {
+      const optional = await Optional.of('foo').flatMapAsync(() => {
+        return Optional.of('bar');
+      });
+
+      expect(optional.get()).toBe('bar');
     });
   });
 });

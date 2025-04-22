@@ -1,3 +1,4 @@
+import { AsyncMapper, AsyncPredicate } from './async';
 import {
   Callable,
   Consumer,
@@ -179,6 +180,21 @@ export default class Optional<T> {
   }
 
   /**
+   * Map this optional to another type
+   * @param mapper the mapping function
+   * @returns an optional with the converted value, or empty if we have none
+   *   or an empty optional if the conversion results in undefined
+   */
+  public async mapAsync<R>(
+    mapper: AsyncMapper<T, R | undefined> | Mapper<T, R | undefined>
+  ): Promise<Optional<R>> {
+    if (typeof this.contents === 'undefined') {
+      return new Optional();
+    }
+    return new Optional(await mapper(this.contents));
+  }
+
+  /**
    * Consume any value in this and map it to a fresh optional
    * @param mapper a mapper from the value in this to a new optional
    * @returns the new optional in itself
@@ -191,12 +207,43 @@ export default class Optional<T> {
   }
 
   /**
+   * Consume any value in this and map it to a fresh optional
+   * @param mapper a mapper from the value in this to a new optional
+   * @returns the new optional in itself
+   */
+  public async flatMapAsync<R>(
+    mapper: AsyncMapper<T, Optional<R>> | Mapper<T, Optional<R>>
+  ): Promise<Optional<R>> {
+    if (typeof this.contents === 'undefined') {
+      return new Optional();
+    }
+    return await mapper(this.contents);
+  }
+
+  /**
    * Filter the value
    * @param filter the filter to apply
    * @returns an optional with either our value, or empty if we've just gone blank
    */
   public filter(filter: Predicate<T>): Optional<T> {
     if (typeof this.contents !== 'undefined' && !filter(this.contents)) {
+      return Optional.empty();
+    }
+    return this;
+  }
+
+  /**
+   * Filter the value using an async filter function
+   * @param filter a filter function that might be async
+   * @returns an optional with either our value, or empty if we've just gone blank
+   */
+  public async filterAsync(
+    filter: AsyncPredicate<T> | Predicate<T>
+  ): Promise<Optional<T>> {
+    if (
+      typeof this.contents !== 'undefined' &&
+      !(await filter(this.contents))
+    ) {
       return Optional.empty();
     }
     return this;
