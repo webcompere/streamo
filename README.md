@@ -170,8 +170,8 @@ operators, then we use flat map.
 ```ts
 // stream of two arrays
 const individualItems = Stream.of([1, 2, 3], [4, 5, 6])
-    .flatMap(array => Stream.ofArray(array))
-    .count(); // will receive 6 items
+  .flatMap((array) => Stream.ofArray(array))
+  .count(); // will receive 6 items
 ```
 
 #### Reducing
@@ -257,7 +257,7 @@ expect(Stream.of(1, 2, 3).allMatch((item) => item < 100)).toBeTruthy();
 ### Terminal Operations
 
 > Calling a terminal operation causes the iterators to run. These cannot be run more than
-> once, so the stream is used up. Do not reuse a stream after a terminal operation is used.
+> once, as the stream is used up. Do not reuse a stream after a terminal operation is used.
 
 #### Embedded Collectors
 
@@ -283,6 +283,30 @@ expect(
 ```
 
 We need to provide a `keyMapper` and a `valueMapper` function. In this example, the utility function `identity` is called to map the object to itself as the value in the map.
+
+To get the maximum item in a `Stream` we use `max` (and for the minimum we use `min`):
+
+```ts
+const maxString = Stream.of('a', 'b', 'c)
+   .max(compareString); // an optional, containing 'c'
+```
+
+The result is an `Optional` which is empty when the `Stream` is empty.
+
+We need to provide a comparator here, for which the utility function `compareString` can help us. If we're
+using a `NumberStream` the comparator defaults to `compareNumber` and, thus, is optional.
+
+We can build a comparator of a property using `comparingBy`:
+
+```ts
+const maxElement = Stream.of({ name: 'a', val: 1 }, { name: 'b', val: 2 }).max(
+  comparingBy((element) => element.name, compareString)
+);
+```
+
+`comparingBy` lets us compose a comparator from a function to select the property of the item, and then another
+comparator. Or we can build our own comparator from scratch, following the same rules as a [sorting `compareFn`](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/sort#description) in
+JavaScript.
 
 #### Collectors
 
