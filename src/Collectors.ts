@@ -122,6 +122,21 @@ export default class Collectors {
   }
 
   /**
+   * Collect to a count
+   */
+  public static counting<T>(): Collector<T, { count: number }, number> {
+    return {
+      supplier: () => ({ count: 0 }),
+      accumulator: (a, b) => {
+        a.count++;
+      },
+      finisher: (a) => {
+        return a.count;
+      },
+    };
+  }
+
+  /**
    * Collect to an average
    * @returns a collector which produces an average of the input or NaN if none
    */
@@ -141,6 +156,22 @@ export default class Collectors {
           return Number.NaN;
         }
         return a.sum / a.count;
+      },
+    };
+  }
+
+  /**
+   * Collect to a sum
+   * @returns a collector which produces an average of the input or NaN if none
+   */
+  public static summing(): Collector<number, { sum: number }, number> {
+    return {
+      supplier: () => ({ sum: 0 }),
+      accumulator: (a, b) => {
+        a.sum += b;
+      },
+      finisher: (a) => {
+        return a.sum;
       },
     };
   }

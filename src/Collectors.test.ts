@@ -158,6 +158,26 @@ describe('Collectors', () => {
     });
   });
 
+  describe('counting', () => {
+    it('will count the items in a stream', () => {
+      expect(Stream.of(1, 2, 3).collect(Collectors.counting())).toBe(3);
+    });
+
+    it('will handle an empty stream', () => {
+      expect(Stream.empty().collect(Collectors.counting())).toBe(0);
+    });
+  });
+
+  describe('summing', () => {
+    it('will total the items in a stream', () => {
+      expect(Stream.of(1, 2, 3).collect(Collectors.summing())).toBe(6);
+    });
+
+    it('will handle an empty stream', () => {
+      expect(Stream.empty<number>().collect(Collectors.summing())).toBe(0);
+    });
+  });
+
   describe('grouping by', () => {
     it('can group elements together', () => {
       const expectedMap = new Map<string, string[]>();

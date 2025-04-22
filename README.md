@@ -69,6 +69,8 @@ useful default comparators for sorting/max/min.
 
 ### Create a Stream
 
+#### Streams of Literals
+
 If we have an array, we can use `ofArray`:
 
 ```ts
@@ -81,6 +83,8 @@ If we have some absolute values we can use `of`:
 ```ts
 const strings = Stream.of('a', 'b', 'c');
 ```
+
+#### Number Streams
 
 We can construct a stream of `number` using `ofNumbers`:
 
@@ -101,6 +105,8 @@ which means we can use `NumberStream` methods like `sum`:
 ```ts
 expect(numbers.sum()).toBe(6);
 ```
+
+#### Streams of Entries
 
 We can also create a stream of the entries from a `Map` or the key value pairs from an `Object`:
 
@@ -124,9 +130,19 @@ expect(streamOfEntries.collect(Collectors.toObjectFromEntries())).toEqual({
 
 If we need to provide an empty stream, then `Stream.empty()` will do so.
 
+#### Joining Streams
+
+If we have multiple streams, we can add them together with `Stream.concat`:
+
+```ts
+const superStream = Stream.concat(Stream.of(1, 2, 3), Stream.of(4, 5, 6));
+```
+
 ### Familiar Operations from Array
 
-Functions like `map`, `filter` and `reduce` are familiar from `Array`.
+Functions like `map`, `flatMap`, `filter` and `reduce` are familiar from `Array`.
+
+#### Filtering
 
 ```ts
 const filtered = Stream.of('a', 'b', 'cc', 'd')
@@ -138,6 +154,8 @@ const filtered = Stream.of('a', 'b', 'cc', 'd')
 > no advantage of using `Stream`. The runtime advantages of stream take effect with multiple operations
 > and the ability to compose functions to route just enough data from a producer to a consumer
 
+#### Mapping
+
 We can also use `map`:
 
 ```ts
@@ -145,6 +163,18 @@ const mapped = Stream.of({ name: 'Bill' }, { name: 'Bob' })
   .map((item) => item.name)
   .toArray(); // Bill, Bob
 ```
+
+If we want to map to a `Stream` and have the individual elements of that stream pass down to the following
+operators, then we use flat map.
+
+```ts
+// stream of two arrays
+const individualItems = Stream.of([1, 2, 3], [4, 5, 6])
+    .flatMap(array => Stream.ofArray(array))
+    .count(); // will receive 6 items
+```
+
+#### Reducing
 
 For reduce we have two options. We can reduce using a single binary operator:
 
@@ -276,6 +306,8 @@ Other `Collectors` functions include:
 - `toObjectFromEntries` - does the same, but assuming the stream is already make of `Entry` objects from an original `Map` or `Record`
 - `toMap` - as with `toObject` but the key mapper can map to anything
 - `toMapFromEntries` - as above
+- `counting` - will count the number of entries in the stream
+- `summming` - can be used with `Stream<number>` or `NumberStream` and provides the sum of the values
 - `averaging` - can be used with `Stream<number>` or `NumberStream` and calculates mean average - returning `Nan` if there are no values
 - `joining` - allows optional `delimiter`, `prefix` and `suffix`, and can only operate on `Stream<string>` (map items to string using `map` if necessary)
 - `collectingAndThen` - allows us to first apply a collector and then apply a mapping function to convert the output of that to something else
@@ -283,6 +315,10 @@ Other `Collectors` functions include:
 - `maxBy` - as `minBy` but with the maxmimum element
 - `groupingByToArray` - group the items according to an identity mapper and return a `Map` with the identity as a key and an array of matching items as the value
 - `groupingBy` - as with `groupingByToArray` but the items that share an identity are collected using another collector - so we can, for example, group by name and then collect the maximum of each group.
+
+> While some of these collectors replicate terminal operations on `Stream` and `Number` stream, they do so to allow them
+> be composed with other collectors. E.g. `groupingBy` may partition by an identity and then the sub items can be further
+> collected into a count with `counting` or to an array with `toArray`
 
 ### Length Functions
 
