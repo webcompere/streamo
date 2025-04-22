@@ -697,8 +697,51 @@ Optional.of('foo').ifPresentOrElse(
 
 ### Optional
 
-Optional supports `mapAsync`, `flatMapAsync` and `filterAsync` which take either a synchronous or
-`async` version of the `Mapper` or `Predicate` and return a `Promise` of an `Optional`.
+For one-off async operations, we could continue to use `Optional`, which supports `mapAsync`, `flatMapAsync` and `filterAsync` which take either a synchronous or
+`async` version of the `Mapper` or `Predicate` and returns a `Promise<Optional>` which can be `await`ed
+to get the actual optional.
+
+However, for fluent async operations on the `Promise` of an `Optional`, we can use `AsyncOptional`.
+
+We can convert an `Optional` to `AsyncOptional`:
+
+```ts
+const asyncOptional = Optional.of('someValue').async();
+```
+
+Or we can construct an `AsyncOptional` from a `Promise` of a value:
+
+```ts
+const asyncOptional = AsyncOptional.of(functionThatReturnsPromise());
+```
+
+Then we can use `map`, `filter`, `flatMap` on the `AsyncOptional` with a mix of synchronous functions,
+or functions that return promises.
+
+```ts
+const asyncOptional = AsyncOptional.of('someValue')
+   .map(someAsyncFunction)
+   .filter((s) => s !== 'error')
+   .map((s) => `${s}!`)
+   .filter(asyncLookupFunction);
+```
+
+The terminal operations of the `AsyncOptional`, such as `get`, `isPresent`, `isEmpty`, `orElse`, etc
+must themselves be awaited, and the `AsyncOptional` can be converted back to an `Optional` by awaiting it:
+
+```ts
+const value = await AsyncOptional.of(callAsync())
+    .filter(someAsyncFilter)
+    .toOptional(); // now we have a standard optional
+```
+
+or
+
+```ts
+const value = await AsyncOptional.of(callAsync())
+    .filter(someAsyncFilter)
+    .orElseGet(someAsyncSupplierOfNewValue);
+```
 
 #### See Also
 
