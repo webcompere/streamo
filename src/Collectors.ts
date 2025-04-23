@@ -1,3 +1,4 @@
+import { AsyncIterable } from './AsyncIterables';
 import { Comparator, identity, Mapper, reversed, Supplier } from './functions';
 import { Iterable } from './Iterables';
 import Optional from './Optional';
@@ -41,6 +42,25 @@ export const collect = <T, A, R>(
   while (iterable.hasNext()) {
     collector.accumulator(accumulated, iterable.getNext());
   }
+  return collector.finisher(accumulated);
+};
+
+/**
+ * Perform general async collection over an iterable with a collector
+ * @param iterable the source of elements
+ * @param collector the collector
+ * @returns a collected object
+ */
+export const collectAsync = async <T, A, R>(
+  asyncIterable: AsyncIterable<T>,
+  collector: Collector<T, A, R>
+): Promise<R> => {
+  const accumulated = collector.supplier();
+  let next: Optional<T>;
+  do {
+    next = await (await asyncIterable.next()).toOptional();
+    next.ifPresent((value) => collector.accumulator(accumulated, value));
+  } while (next.isPresent());
   return collector.finisher(accumulated);
 };
 

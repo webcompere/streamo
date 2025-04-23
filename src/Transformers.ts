@@ -1,3 +1,4 @@
+import { Comparator } from './functions';
 import Optional from './Optional';
 
 /**
@@ -45,6 +46,41 @@ export default class Transformers {
         return { value: Optional.empty() };
       },
       finisher: (a) => Optional.of(a).filter((a) => a.length > 0),
+    };
+  }
+
+  /**
+   * Distinct transformer - will only emit distinct values
+   * @returns a transformer which only allows a value to be emitted once
+   */
+  public static distinct<T>(): Transformer<T, Set<T>, T> {
+    return {
+      supplier: () => new Set<T>(),
+      transformer: (a, t) => {
+        const isNew = !a.has(t);
+        if (isNew) {
+          a.add(t);
+          return { value: Optional.of(t) };
+        }
+        return { value: Optional.empty() };
+      },
+      finisher: () => Optional.empty(),
+    };
+  }
+
+  /**
+   * Make a transformer that absorbs the whole set and sorts it
+   * @param compareFn the comparator to use
+   * @returns a transformer
+   */
+  public static sorted<T>(compareFn?: Comparator<T>): Transformer<T, T[], T[]> {
+    return {
+      supplier: () => [],
+      transformer: (a, t) => {
+        a.push(t);
+        return { value: Optional.empty() };
+      },
+      finisher: (a) => Optional.of(a.sort(compareFn)),
     };
   }
 }

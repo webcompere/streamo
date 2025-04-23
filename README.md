@@ -5,7 +5,11 @@
 ![Build](https://github.com/webcompere/streamo/actions/workflows/build.yml/badge.svg?branch=main)
 [![codecov](https://codecov.io/gh/webcompere/streamo/graph/badge.svg?token=tDhFT9GVCf)](https://codecov.io/gh/webcompere/streamo)
 
-A TypeScript implementation of collection streaming. Loosely based on Java's Streaming API.
+A TypeScript implementation of collection streaming. Loosely based on Java's Streaming API. It provides:
+
+- `map`, `filter`, `reduce` functions on data sets that do not have to be in memory all at once
+- concurrent processing with `AsyncStream`
+- composable, expressive algorithms for data processing, synchronously and asynchronsly
 
 ## Primary Use Case and Rationale
 
@@ -52,7 +56,7 @@ until `findFirst` gets its first result.
 The `Optional` class, also copied from Java, is a way to represent a value, or the absence of a value, as
 found in a stream.
 
-## Usage
+## Synchronous Usage
 
 ### Overview
 
@@ -693,9 +697,112 @@ Optional.of('foo').ifPresentOrElse(
 
 ## Async Support
 
-> Note: this is incubating
+### AsyncStreams
 
-### Optional
+The `AsyncStream` is an alternative implementation of `Stream` which allows for the source and modifications functions
+to be asynchronous. Where it allows asynchronous functions such as `AsyncMapper` it also allows the synchronous version `Mapper`
+to be used.
+
+We can build an `AsyncStream` to process using asynchronous functions, and add a `buffer` to it to create concurrency.
+
+The terminal operations of the `AsyncStream` result in a `Promise` we can `await`.
+
+> There's no equivalent of `NumberStream` for async use.
+
+#### Creating
+
+A `Stream` can be converted into an `AsyncStream`:
+
+```ts
+const asyncStream = Stream.of('a', 'b', 'c').async();
+```
+
+Or an `AsyncStream` can be constructed with the `of` and `ofArray` functions. As with `Stream`, we can use `concat` to
+bring together two `AsyncStreams` of the same type:
+
+```ts
+const unifiedStream = AsyncStream.concat(
+  AsyncStream.of(1, 2),
+  AsyncStream.ofArray([3, 4])
+);
+```
+
+#### Mapping, Filtering
+
+`AsyncStream` can accept synchronous or asynchronous functions to `map`, `flatMap`, `filter`, etc.
+
+```ts
+const result = await Stream.of('a', 'b', 'c')
+  .async()
+  .map((item) => lookupItemInWebService(item)) // async mapper
+  .filter((item) => item.value === 'Success') // synchronous predicate
+  .toArray();
+```
+
+The `flatMap` modifier will extract the items from an `AsyncStream` produced from the items:
+
+```ts
+const stream = Stream.of([1, 2, 3], [4, 5, 6])
+  .async()
+  .flatMap((array) => AsyncStream.ofArray(array)); // now AsyncStream<number>
+```
+
+#### Terminal Operations
+
+The usual functions all apply:
+
+- `findFirst`, `anyMatch`, `noneMatch`, `allMatch` - allowing async and synchronous predicates
+- `toArray` - for collecting to a final array
+- `count` - to get the count
+- `collect` - which uses a synchronous collector from `Collectors` and, thus allows us also use use the `maxBy`, `minBy` and other collectors available for `Stream`
+
+#### Conversion
+
+Using `indexed` will attach the source order at the point of indexing (though if running concurrently, this can be random):
+
+```ts
+const stream = AsyncStream.of(1, 2, 3)
+  .map((item) => item * 2)
+  .buffer(3) // applies concurrency
+  .indexed(); // now a stream of <{ index: number; value: number; }>
+```
+
+The `transform` method uses a synchronous transformer to rewrite the stream with processed values, such as batching.
+
+As with `Stream`, the `sorted` method can be used to put the elements into order, and `distinct` will filter out duplicates: these are implemented via `transform`s.
+
+#### Buffering and Concurrency
+
+Without a buffer, the stream uses `await` on each item coming through the stream individually, guaranteeing the source order. However,
+one of the benefits of using asynchronous sources and asynchronous mapping functions, is that async code can be allow us to exploit concurrency.
+
+The solution to this is to add a buffer to the stream.
+
+> The buffer should be added directly after `map` or `filter` operations that do the most asynchronous work. If the buffer
+> is added too soon, or too late, then it will not be able to parallelise the work.
+
+It's probably advisable to add only one buffer to the stream.
+
+```ts
+const results = await AsyncStream.of('user1', 'user2', 'user3', 'user4')
+  .map((user) => loadUserProfile(user))
+  .filter((user) => user.isAdmin)
+  .buffer(2) // do this two users at a time
+  .toArray();
+```
+
+Buffers have finite upper limits which we're using to control the volume of concurrent requests we might make to external
+services, as well as the amount of unprocessed data being kept in the buffer before it hits something like a `findFirst`.
+
+If we wanted maximum concurrency, we could set the buffer size to `Number.MAX_VALUE`.
+
+> Performance tuning may need to consider where the `buffer` operation is put compared to more sequential activities
+> such as `flatMap` and `transform`. Similarly, the presence of `buffer` will affect the output order of the data.
+
+### AsyncOptional
+
+`AsyncStream` is built on top of `AsyncOptional`, which is the returned value from `findFirst`. However, `AsyncOptional` can be
+used stand-alone.
 
 For one-off async operations, we could continue to use `Optional`, which supports `mapAsync`, `flatMapAsync` and `filterAsync` which take either a synchronous or
 `async` version of the `Mapper` or `Predicate` and returns a `Promise<Optional>` which can be `await`ed
@@ -720,10 +827,10 @@ or functions that return promises.
 
 ```ts
 const asyncOptional = AsyncOptional.of('someValue')
-   .map(someAsyncFunction)
-   .filter((s) => s !== 'error')
-   .map((s) => `${s}!`)
-   .filter(asyncLookupFunction);
+  .map(someAsyncFunction)
+  .filter((s) => s !== 'error')
+  .map((s) => `${s}!`)
+  .filter(asyncLookupFunction);
 ```
 
 The terminal operations of the `AsyncOptional`, such as `get`, `isPresent`, `isEmpty`, `orElse`, etc
@@ -731,16 +838,16 @@ must themselves be awaited, and the `AsyncOptional` can be converted back to an 
 
 ```ts
 const value = await AsyncOptional.of(callAsync())
-    .filter(someAsyncFilter)
-    .toOptional(); // now we have a standard optional
+  .filter(someAsyncFilter)
+  .toOptional(); // now we have a standard optional
 ```
 
 or
 
 ```ts
 const value = await AsyncOptional.of(callAsync())
-    .filter(someAsyncFilter)
-    .orElseGet(someAsyncSupplierOfNewValue);
+  .filter(someAsyncFilter)
+  .orElseGet(someAsyncSupplierOfNewValue);
 ```
 
 #### See Also

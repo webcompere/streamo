@@ -1,3 +1,4 @@
+import AsyncStream from './AsyncStream';
 import { Collector, Entry, collect } from './Collectors';
 import {
   alwaysTrue,
@@ -26,7 +27,7 @@ import {
   TransformingIterator,
 } from './Iterables';
 import Optional from './Optional';
-import { Transformer } from './Transformers';
+import Transformers, { Transformer } from './Transformers';
 
 export type Indexed<T> = { index: number; value: T };
 
@@ -354,6 +355,14 @@ export default class Stream<T> {
   }
 
   /**
+   * Convert to an async stream
+   * @returns an async stream with these elements in
+   */
+  public async(): AsyncStream<T> {
+    return AsyncStream.ofStream(this);
+  }
+
+  /**
    * Does anything in the stream match the predicate? (terminal operation)
    * @param predicate the test
    * @returns true if anything matches
@@ -386,7 +395,7 @@ export default class Stream<T> {
   }
 
   /**
-   * Do all items match the predicate (terminal operation)
+   * Do all of the items match the predicate (true if there are no items in the stream - terminal operation)
    * @param predicate the predicate to test
    * @returns true if all match
    */
@@ -428,14 +437,12 @@ export default class Stream<T> {
    * Turn this into a distinct stream
    */
   public distinct() {
-    const seen = new Set<T>();
-    return this.filter((item) => {
-      const isNew = !seen.has(item);
-      if (isNew) {
-        seen.add(item);
-      }
-      return isNew;
-    });
+    return this.substituteIterable(
+      new TransformingIterator<T, Set<T>, T>(
+        this.iterable,
+        Transformers.distinct()
+      )
+    );
   }
 
   /**
