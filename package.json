@@ -1,6 +1,6 @@
 {
   "name": "@webcompere/streamo",
-  "version": "1.0.12",
+  "version": "1.0.13",
   "description": "A streaming library inspired by Java Streams",
   "type": "module",
   "main": "./build/index.cjs",
