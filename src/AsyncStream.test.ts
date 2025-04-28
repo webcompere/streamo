@@ -1,3 +1,4 @@
+import { sleep } from './async';
 import AsyncOptional from './AsyncOptional';
 import AsyncStream from './AsyncStream';
 import { compareString, comparingBy } from './functions';
@@ -273,6 +274,71 @@ describe('Async Stream', () => {
         ['a', 'b'],
         ['c', 'd'],
       ]);
+    });
+  });
+
+  describe('generate', () => {
+    it('can generate finite with limit', async () => {
+      expect(
+        await AsyncStream.generateFinite(() => AsyncOptional.of('a'))
+          .limit(5)
+          .toArray()
+      ).toEqual(['a', 'a', 'a', 'a', 'a']);
+    });
+
+    it('can generate finite sequentially', async () => {
+      let index = 0;
+      const letters = ['a', 'b', 'c', 'd', 'e'];
+      expect(
+        await AsyncStream.generateFinite(
+          () =>
+            AsyncOptional.of(
+              (async () => {
+                await sleep(10);
+                if (index < letters.length) {
+                  return letters[index++];
+                }
+                return undefined;
+              })()
+            ),
+          true
+        )
+          .buffer(3)
+          .toArray()
+      ).toEqual(['a', 'b', 'c', 'd', 'e']);
+    });
+
+    it('can iterate even when parallel', async () => {
+      let index = 0;
+      const letters = ['b', 'c', 'd', 'e'];
+      expect(
+        await AsyncStream.iterate(
+          () => 'a',
+          async (last: string) => {
+            await sleep(10);
+            if (index < letters.length) {
+              return AsyncOptional.of(last + letters[index++]);
+            }
+            return AsyncOptional.empty();
+          }
+        )
+          .buffer(3)
+          .toArray()
+      ).toEqual(['a', 'ab', 'abc', 'abcd', 'abcde']);
+    });
+
+    it('can iterate from actual seed', async () => {
+      let index = 0;
+      const letters = ['b', 'c', 'd', 'e'];
+      expect(
+        await AsyncStream.iterate('a', async (last: string) => {
+          await sleep(10);
+          if (index < letters.length) {
+            return AsyncOptional.of(last + letters[index++]);
+          }
+          return AsyncOptional.empty();
+        }).toArray()
+      ).toEqual(['a', 'ab', 'abc', 'abcd', 'abcde']);
     });
   });
 });

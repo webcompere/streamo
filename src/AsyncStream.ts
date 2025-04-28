@@ -1,12 +1,15 @@
-import { AsyncMapper, AsyncPredicate } from './async';
+import { AsyncMapper, AsyncPredicate, AsyncSupplier } from './async';
 import {
   AsyncIterable,
   bufferingIterable,
   emptyAsyncIterable,
   filteredAsyncIterable,
   flatMappedAsyncIterable,
+  generatingIterable,
   iterableToAsync,
+  limitingIterable,
   mappedAsyncIterable,
+  sequentialGeneratingIterable,
   transformingAsyncIterable,
 } from './AsyncIterables';
 import AsyncOptional from './AsyncOptional';
@@ -57,6 +60,50 @@ export default class AsyncStream<T> {
    */
   public static concat<T>(...streams: AsyncStream<T>[]): AsyncStream<T> {
     return AsyncStream.ofArray(streams).flatMap(identity);
+  }
+
+  /**
+   * Generate a finite series of items
+   * @param generator the generator, which will supply an AsyncOptional with a value or empty in it - the stream stops when empty
+   * @param sequential whether the stream is sequential, in which case only one item can be retrieved from the supplier at a time
+   * @returns a new stream
+   */
+  public static generateFinite<T>(
+    generator: AsyncSupplier<AsyncOptional<T>> | Supplier<AsyncOptional<T>>,
+    sequential = false
+  ): AsyncStream<T> {
+    return new AsyncStream(
+      sequential
+        ? sequentialGeneratingIterable(generator)
+        : generatingIterable(generator)
+    );
+  }
+
+  /**
+   * Generate a stream by iterating over a function
+   * @param seed the first value of the stream
+   * @param next the function that produces value n, by transforming value n - 1
+   * @param hasNext the function that determines whether the stream continues - this is applied to each element,
+   * including the seed, when it's generated
+   */
+  public static iterate<T>(
+    seed: Supplier<T | undefined> | AsyncSupplier<T | undefined> | T,
+    next: AsyncMapper<T, AsyncOptional<T>> | Mapper<T, AsyncOptional<T>>
+  ): AsyncStream<T> {
+    let last: T | undefined = undefined;
+    let first: boolean = true;
+    return this.generateFinite(async () => {
+      if (first) {
+        first = false;
+        last = seed instanceof Function ? await seed() : seed;
+        return AsyncOptional.of(last);
+      }
+      if (typeof last === 'undefined') {
+        return AsyncOptional.empty();
+      }
+      last = await (await next(last)).get();
+      return AsyncOptional.of(last);
+    }, true);
   }
 
   /**
@@ -175,6 +222,15 @@ export default class AsyncStream<T> {
     mapper: Mapper<T, AsyncStream<R>> | AsyncMapper<T, AsyncStream<R>>
   ): AsyncStream<R> {
     return new AsyncStream(flatMappedAsyncIterable(this.asyncIterable, mapper));
+  }
+
+  /**
+   * Limit the stream to a maximum number of items
+   * @param max the maximum number of items
+   * @returns a limited series of items
+   */
+  public limit(max: number): AsyncStream<T> {
+    return new AsyncStream(limitingIterable(this.asyncIterable, max));
   }
 
   /**

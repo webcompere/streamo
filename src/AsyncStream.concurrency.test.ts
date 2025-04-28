@@ -1,4 +1,5 @@
 import { AsyncMapper, sleep } from './async';
+import AsyncStream from './AsyncStream';
 import { Mapper } from './functions';
 import Stream from './Stream';
 
@@ -98,5 +99,25 @@ describe('Concurrent happenings', () => {
 
     expect(tracker.max).toBe(0);
     expect(first).toBeUndefined();
+  });
+
+  it('can tolerate a buffer after a flatmap', async () => {
+    const tracker = new Tracker();
+    const result = await Stream.of(1, 2, 3)
+      .async()
+      .flatMap(
+        mapperFactory(tracker, (t) => {
+          return AsyncStream.of(t, t * 10);
+        })
+      )
+      .buffer(4)
+      .toArray();
+    expect(result).toContain(1);
+    expect(result).toContain(2);
+    expect(result).toContain(3);
+    expect(result).toContain(10);
+    expect(result).toContain(20);
+    expect(result).toContain(30);
+    expect(tracker.max).toBeGreaterThan(1);
   });
 });

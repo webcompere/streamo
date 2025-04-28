@@ -727,6 +727,38 @@ const unifiedStream = AsyncStream.concat(
 );
 ```
 
+We can create a stream from a generating function using `generateFinite`:
+
+```ts
+const streamOfGenerated = AsyncStream.generate(() =>
+  // let's assume readNextReqeuest is function that returns a promise of something
+  AsyncOptional.of(readNextRequest())
+).limit(10);
+```
+
+The generating function can be synchronous or async. If used in conjunction with a `buffer` (see later)
+this might allow the elements to be fetched concurrently and to enter the stream out of order,
+we can add an optional boolean parameter of `true` to force one by one calls to the generator:
+
+```ts
+const streamOfGenerated = AsyncStream.generate(
+  () =>
+    // using this sequentially
+    AsyncOptional.of(readNextRequest()),
+  true
+).limit(10);
+```
+
+This allows the implementation of `iterate` where a seed value or function can be used in conjunction with a function to
+calculate the next item (or return `empty` to signal none) to produce a stream:
+
+```ts
+const streamOfIterated = AsyncStream.iterate(
+  'first',
+  async (last: string): AsyncOptional<string> => findEntryAfter(last)
+);
+```
+
 #### Mapping, Filtering
 
 `AsyncStream` can accept synchronous or asynchronous functions to `map`, `flatMap`, `filter`, etc.
@@ -746,6 +778,8 @@ const stream = Stream.of([1, 2, 3], [4, 5, 6])
   .async()
   .flatMap((array) => AsyncStream.ofArray(array)); // now AsyncStream<number>
 ```
+
+The `limit` function is also available to reduce the number of items allowed past it.
 
 #### Terminal Operations
 
@@ -772,6 +806,8 @@ The `transform` method uses a synchronous transformer to rewrite the stream with
 As with `Stream`, the `sorted` method can be used to put the elements into order, and `distinct` will filter out duplicates: these are implemented via `transform`s.
 
 #### Buffering and Concurrency
+
+> Note: this is still incubating - watch out for infinite waits, or missing items - please raise issues if you find any
 
 Without a buffer, the stream uses `await` on each item coming through the stream individually, guaranteeing the source order. However,
 one of the benefits of using asynchronous sources and asynchronous mapping functions, is that async code can be allow us to exploit concurrency.

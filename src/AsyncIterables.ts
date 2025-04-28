@@ -1,7 +1,7 @@
-import { AsyncMapper, AsyncPredicate, AsyncSupplier } from './async';
+import { AsyncMapper, AsyncPredicate, AsyncSupplier, sleep } from './async';
 import AsyncOptional from './AsyncOptional';
 import AsyncStream from './AsyncStream';
-import { Callable, Mapper, noop, Predicate } from './functions';
+import { Callable, Mapper, noop, Predicate, Supplier } from './functions';
 import { Iterable } from './Iterables';
 import { Transformer } from './Transformers';
 
@@ -26,6 +26,47 @@ export const emptyAsyncIterable = <T>(): AsyncIterable<T> => ({
 });
 
 /**
+ * Generate the stream from a source function
+ * @param generator the function that generates the next {@link AsyncOptional} with either an element or
+ * empty in it
+ * @returns the iterator
+ */
+export const generatingIterable = <T>(
+  generator: Supplier<AsyncOptional<T>> | AsyncSupplier<AsyncOptional<T>>
+) => ({
+  next: async () => await generator(),
+  stop: noop,
+});
+
+/**
+ * Generate the stream from a source function
+ * @param generator the function that generates the next {@link AsyncOptional} with either an element or
+ * empty in it and guarantee the order
+ * @returns the iterator
+ */
+export const sequentialGeneratingIterable = <T>(
+  generator: Supplier<AsyncOptional<T>> | AsyncSupplier<AsyncOptional<T>>
+): AsyncIterable<T> => {
+  const promises: Promise<T | undefined>[] = [];
+  return {
+    next: async () => {
+      // wait for no pending promises from someone else
+      // surrendering to the primary operation
+      while (promises.length) {
+        await Promise.all([...promises, sleep(1)]);
+      }
+
+      promises.push((async () => await (await generator()).get())());
+
+      const next = await Promise.race(promises);
+      promises.pop();
+      return AsyncOptional.of(next);
+    },
+    stop: noop,
+  };
+};
+
+/**
  * Convert a regular iterable to async
  * @param iterable an iterable to convert into the async iterable pattern
  * @returns an AsyncIterable
@@ -42,24 +83,37 @@ export const iterableToAsync = <T>(
   stop: noop,
 });
 
+/**
+ * Filtering an iterable until an element is found
+ * @param iterable the iterable to filter
+ * @param predicate the predicate to allow an element through
+ * @returns a filtering iterable
+ */
 export const filteredAsyncIterable = <T>(
   iterable: AsyncIterable<T>,
   predicate: Predicate<T> | AsyncPredicate<T>
-): AsyncIterable<T> => ({
-  next: async () => {
-    while (true) {
-      const next = await (await iterable.next()).toOptional();
-      if (!next.isPresent()) {
-        return AsyncOptional.empty();
+): AsyncIterable<T> => {
+  let stopped = false;
+  return {
+    next: async () => {
+      while (!stopped) {
+        const next = await (await iterable.next()).toOptional();
+        if (!next.isPresent()) {
+          return AsyncOptional.empty();
+        }
+        const filtered = await next.filterAsync(predicate);
+        if (filtered.isPresent()) {
+          return filtered.async();
+        }
       }
-      const filtered = await next.filterAsync(predicate);
-      if (filtered.isPresent()) {
-        return filtered.async();
-      }
-    }
-  },
-  stop: iterable.stop,
-});
+      return AsyncOptional.empty();
+    },
+    stop: () => {
+      stopped = true;
+      iterable.stop();
+    },
+  };
+};
 
 /**
  * Apply mapping on the fly to the iterable
@@ -86,30 +140,47 @@ export const flatMappedAsyncIterable = <T, R>(
   mapper: Mapper<T, AsyncStream<R>> | AsyncMapper<T, AsyncStream<R>>
 ): AsyncIterable<R> => {
   let done = false;
-  let lastIterable: AsyncIterable<R> = emptyAsyncIterable();
+  let availableIterables: AsyncIterable<R>[] = [emptyAsyncIterable()];
+  let awaiting = 0;
   return {
     next: async () => {
-      while (!done) {
-        const next = await lastIterable.next();
-        if (await next.isPresent()) {
-          return next;
-        }
-        // need to fetch the next batch
-        const nextIterable = (await iterable.next())
-          .map(mapper)
-          .map((stream) => stream.getIterable());
+      while (!done && (awaiting || availableIterables.length)) {
+        if (availableIterables.length) {
+          const thisBatch = availableIterables[0];
+          const next = await thisBatch.next();
+          if (await next.isPresent()) {
+            return next;
+          }
 
-        // if there's no next batch, we're done
-        if (!(await nextIterable.isPresent())) {
-          done = true;
+          // this batch is used up and it may still need removing
+          if (availableIterables[0] === thisBatch) {
+            availableIterables.shift();
+          }
         } else {
-          // try using this as the next batch
-          lastIterable = (await nextIterable.get())!;
+          // avoid thrashing and try to pick up from a batch arriving
+          await sleep(1);
+        }
+
+        if (!availableIterables.length) {
+          // need to fetch the next batch
+          awaiting++;
+          const nextIterable = (await iterable.next())
+            .map(mapper)
+            .map((stream) => stream.getIterable());
+
+          if (await nextIterable.isPresent()) {
+            // add this as the next batch
+            availableIterables.push((await nextIterable.get())!);
+          }
+          awaiting--;
         }
       }
       return AsyncOptional.empty();
     },
-    stop: iterable.stop,
+    stop: () => {
+      done = true;
+      iterable.stop();
+    },
   };
 };
 
@@ -160,6 +231,50 @@ export const transformingAsyncIterable = <T, A, R>(
   };
 };
 
+/**
+ * Put an item limit on top of a source
+ * @param source the source iterable
+ * @param max the maximum number of items to emit
+ * @returns the stream, trimmed to the number of items
+ */
+export const limitingIterable = <T>(
+  source: AsyncIterable<T>,
+  max: number
+): AsyncIterable<T> => {
+  let stop = false;
+  let count = 0;
+  return {
+    next: async () => {
+      if (stop) {
+        return AsyncOptional.empty();
+      }
+      if (count >= max) {
+        source.stop();
+        stop = true;
+        return AsyncOptional.empty();
+      }
+      const nextItem = await source.next();
+
+      // it's possible some other promise has already beaten us to this item
+      if (count < max && !stop) {
+        count++;
+        return nextItem;
+      }
+      return AsyncOptional.empty();
+    },
+    stop: () => {
+      source.stop();
+      stop = true;
+    },
+  };
+};
+
+/**
+ * Create a buffer around the upstream iterables
+ * @param iterable the decoratee, which provides the next iterables
+ * @param size size of the buffer
+ * @returns a new buffering iterable
+ */
 export const bufferingIterable = <T>(
   iterable: AsyncIterable<T>,
   size: number
@@ -169,7 +284,7 @@ export const bufferingIterable = <T>(
   const ready: AsyncOptional<T>[] = [];
   let index = 0;
 
-  const queueMore = () => {
+  const queueMore = async () => {
     while (!stop && pending.size < size) {
       const promise = iterable.next();
       const nextIndex = index++;
@@ -182,6 +297,9 @@ export const bufferingIterable = <T>(
         })
       );
     }
+
+    // this micro sleep stops thrashing
+    await sleep(1);
   };
 
   const nextReadyOne = async (): Promise<AsyncOptional<T> | undefined> => {
@@ -191,7 +309,7 @@ export const bufferingIterable = <T>(
 
       const isPresent = await buffered.isPresent();
 
-      queueMore();
+      await queueMore();
 
       if (isPresent) {
         return buffered;
@@ -214,7 +332,7 @@ export const bufferingIterable = <T>(
           return available;
         }
 
-        queueMore();
+        await queueMore();
 
         if (pending.size) {
           await Promise.race(pending.keys());
