@@ -91,6 +91,12 @@ describe('streaming', () => {
       ).toEqual([1, 2, 3, 4, 5, 6]);
     });
 
+    it('can flatten elements direct to array', () => {
+      expect(
+        Stream.of([1, 2, 3], [4, 5, 6]).flatMap(identity).toArray()
+      ).toEqual([1, 2, 3, 4, 5, 6]);
+    });
+
     it('can concatenate streams', () => {
       expect(
         Stream.concat(Stream.of(1, 2, 3), Stream.of(4, 5, 6)).toArray()

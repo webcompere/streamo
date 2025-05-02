@@ -263,10 +263,16 @@ export default class Stream<T> {
    * @param mapper maps each element to a new stream
    * @returns the stream of all the items as though a single stream
    */
-  public flatMap<R>(mapper: Mapper<T, Stream<R>>): Stream<R> {
+  public flatMap<R>(mapper: Mapper<T, Stream<R> | R[]>): Stream<R> {
     return new Stream<R>(
       new FlatteningIterable(
-        new MappingIterable(this.iterable, (item) => mapper(item).getIterable())
+        new MappingIterable(this.iterable, (item) => {
+          const mapped = mapper(item);
+          if (mapped instanceof Array) {
+            return new ArrayIterable(mapped);
+          }
+          return mapped.getIterable();
+        })
       )
     );
   }

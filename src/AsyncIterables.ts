@@ -137,7 +137,7 @@ export const mappedAsyncIterable = <T, R>(
  */
 export const flatMappedAsyncIterable = <T, R>(
   iterable: AsyncIterable<T>,
-  mapper: Mapper<T, AsyncStream<R>> | AsyncMapper<T, AsyncStream<R>>
+  mapper: Mapper<T, AsyncStream<R> | R[]> | AsyncMapper<T, AsyncStream<R> | R[]>
 ): AsyncIterable<R> => {
   let done = false;
   let availableIterables: AsyncIterable<R>[] = [emptyAsyncIterable()];
@@ -166,6 +166,11 @@ export const flatMappedAsyncIterable = <T, R>(
           awaiting++;
           const nextIterable = (await iterable.next())
             .map(mapper)
+            .map((streamOrArray) =>
+              streamOrArray instanceof Array
+                ? AsyncStream.ofArray(streamOrArray)
+                : streamOrArray
+            )
             .map((stream) => stream.getIterable());
 
           if (await nextIterable.isPresent()) {

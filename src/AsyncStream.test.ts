@@ -1,7 +1,7 @@
 import { sleep } from './async';
 import AsyncOptional from './AsyncOptional';
 import AsyncStream from './AsyncStream';
-import { compareString, comparingBy } from './functions';
+import { compareString, comparingBy, identity } from './functions';
 import Stream from './Stream';
 import Transformers from './Transformers';
 
@@ -207,6 +207,14 @@ describe('Async Stream', () => {
       expect(
         await AsyncStream.ofStream(Stream.of([1, 2, 3], [4, 5, 6]))
           .flatMap((array) => AsyncStream.ofStream(Stream.ofArray(array)))
+          .toArray()
+      ).toEqual([1, 2, 3, 4, 5, 6]);
+    });
+
+    it('Async stream can be flat mapped with a synchronous function that returns an array', async () => {
+      expect(
+        await AsyncStream.ofStream(Stream.of([1, 2, 3], [4, 5, 6]))
+          .flatMap(identity)
           .toArray()
       ).toEqual([1, 2, 3, 4, 5, 6]);
     });

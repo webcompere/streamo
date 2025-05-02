@@ -178,6 +178,15 @@ const individualItems = Stream.of([1, 2, 3], [4, 5, 6])
   .count(); // will receive 6 items
 ```
 
+`flatMap` can return a stream, but as a shortcut, a `flatMap` can return an Array and this will be converted into a stream:
+
+```ts
+// stream of two arrays
+const individualItems = Stream.of([1, 2, 3], [4, 5, 6])
+  .flatMap(identity) // the identity function maps the item to itself
+  .count(); // will receive 6 items
+```
+
 #### Reducing
 
 For reduce we have two options. We can reduce using a single binary operator:
