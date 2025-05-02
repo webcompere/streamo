@@ -32,7 +32,7 @@
     "esbuild": "^0.25.2",
     "prettier": "^3.5.3",
     "typescript": "^5.8.3",
-    "vite": "^6.3.2",
-    "vitest": "^3.1.1"
+    "vite": "^6.3.4",
+    "vitest": "^3.1.2"
   }
 }
