@@ -219,7 +219,9 @@ export default class AsyncStream<T> {
    * @param mapper the mapper which converts the item into a new AsyncStream
    */
   public flatMap<R>(
-    mapper: Mapper<T, AsyncStream<R>> | AsyncMapper<T, AsyncStream<R>>
+    mapper:
+      | Mapper<T, AsyncStream<R> | R[]>
+      | AsyncMapper<T, AsyncStream<R> | R[]>
   ): AsyncStream<R> {
     return new AsyncStream(flatMappedAsyncIterable(this.asyncIterable, mapper));
   }
