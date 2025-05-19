@@ -17,8 +17,8 @@ Consider the following code:
 
 ```ts
 const count = [1, 2, 3]
-  .map((item) => item * 2);
-  .map((item) => `${item}`);
+  .map((item) => item * 2)
+  .map((item) => `${item}`)
   .filter((item) => item !== '6')
   .length;
 ```
