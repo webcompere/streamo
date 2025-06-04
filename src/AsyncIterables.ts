@@ -302,9 +302,6 @@ export const bufferingIterable = <T>(
         })
       );
     }
-
-    // this micro sleep stops thrashing
-    await sleep(1);
   };
 
   const nextReadyOne = async (): Promise<AsyncOptional<T> | undefined> => {
@@ -340,7 +337,7 @@ export const bufferingIterable = <T>(
         await queueMore();
 
         if (pending.size) {
-          await Promise.race(pending.keys());
+          await Promise.race(pending.values());
         }
       }
 
